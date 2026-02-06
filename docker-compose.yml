@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  yolo-detection:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_process_detection
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+      - ./cache:/app/cache
+    environment:
+      - DEVICE=cuda
+      - MODEL_SIZE=n
+      - CONFIDENCE_THRESHOLD=0.5
+      - IOU_THRESHOLD=0.45
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  yolo-detection-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_process_detection_cpu
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+      - ./cache:/app/cache
+    environment:
+      - DEVICE=cpu
+      - MODEL_SIZE=n
+    profiles:
+      - cpu
+    restart: unless-stopped

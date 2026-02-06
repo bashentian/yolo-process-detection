@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Process Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        
+        .video-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+        
+        .video-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .upload-area {
+            margin-top: 20px;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .stats-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .stage-indicator {
+            text-align: center;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stage-indicator h2 {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+        
+        .timeline {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .timeline-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+        
+        .timeline-item .time {
+            font-size: 0.9em;
+            color: #666;
+            width: 80px;
+        }
+        
+        .timeline-item .stage {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>YOLO Process Detection System</h1>
+            <p>Real-time industrial process monitoring using YOLO object detection</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <img id="video-stream" src="/api/stream_video" alt="Video Stream">
+                </div>
+                
+                <div class="upload-area" id="upload-area">
+                    <h3>Upload Video for Analysis</h3>
+                    <p>Drag and drop a video file here or click to browse</p>
+                    <input type="file" id="video-input" accept="video/*" style="display: none;">
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" id="process-btn" disabled>Process Video</button>
+                    <button class="btn" id="export-btn" disabled>Export Results</button>
+                    <button class="btn" id="reset-btn">Reset Analysis</button>
+                </div>
+                
+                <div id="messages"></div>
+            </div>
+            
+            <div class="stats-section">
+                <div class="stage-indicator">
+                    <h3>Current Stage</h3>
+                    <h2 id="current-stage">Idle</h2>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Overall Efficiency</h3>
+                    <div class="value" id="efficiency">0%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Total Detections</h3>
+                    <div class="value" id="detections">0</div>
+                </div>
+                
+                <div class="stat-card">
+                    <h3>Frames Processed</h3>
+                    <div class="value" id="frames">0</div>
+                </div>
+                
+                <div class="timeline">
+                    <h3>Process Timeline</h3>
+                    <div id="timeline-items"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const videoInput = document.getElementById('video-input');
+        const processBtn = document.getElementById('process-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const messagesDiv = document.getElementById('messages');
+        
+        let uploadedVideoPath = null;
+        
+        uploadArea.addEventListener('click', () => videoInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+        
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+        
+        function handleFileUpload(file) {
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            showMessage('Uploading video...', 'loading');
+            
+            fetch('/api/upload_video', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                } else {
+                    uploadedVideoPath = data.video_path;
+                    processBtn.disabled = false;
+                    showMessage(`Video uploaded successfully: ${file.name}`, 'success');
+                }
+            })
+            .catch(error => {
+                showMessage(`Upload failed: ${error}`, 'error');
+            });
+        }
+        
+        processBtn.addEventListener('click', () => {
+            if (!uploadedVideoPath) return;
+            
+            showMessage('Processing video...', 'loading');
+            processBtn.disabled = true;
+            
+            fetch('/api/process_video', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ video_path: uploadedVideoPath })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                    processBtn.disabled = false;
+                } else {
+                    showMessage('Video processed successfully!', 'success');
+                    exportBtn.disabled = false;
+                    updateStatistics(data.statistics);
+                    updateEfficiency(data.efficiency);
+                }
+            })
+            .catch(error => {
+                showMessage(`Processing failed: ${error}`, 'error');
+                processBtn.disabled = false;
+            });
+        });
+        
+        exportBtn.addEventListener('click', () => {
+            fetch('/api/export_results', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ output_path: 'outputs/results.json' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showMessage(data.error, 'error');
+                } else {
+                    showMessage(data.message, 'success');
+                }
+            })
+            .catch(error => {
+                showMessage(`Export failed: ${error}`, 'error');
+            });
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            fetch('/api/reset', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                showMessage('Analysis reset successfully', 'success');
+                resetStatistics();
+            })
+            .catch(error => {
+                showMessage(`Reset failed: ${error}`, 'error');
+            });
+        });
+        
+        function updateStatistics(stats) {
+            document.getElementById('detections').textContent = stats.total_detections;
+            document.getElementById('frames').textContent = stats.total_frames;
+        }
+        
+        function updateEfficiency(efficiency) {
+            document.getElementById('efficiency').textContent = `${efficiency.efficiency.toFixed(1)}%`;
+        }
+        
+        function resetStatistics() {
+            document.getElementById('current-stage').textContent = 'Idle';
+            document.getElementById('efficiency').textContent = '0%';
+            document.getElementById('detections').textContent = '0';
+            document.getElementById('frames').textContent = '0';
+            document.getElementById('timeline-items').innerHTML = '';
+            uploadedVideoPath = null;
+            processBtn.disabled = true;
+            exportBtn.disabled = true;
+        }
+        
+        function showMessage(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            
+            if (type === 'loading') {
+                alertDiv.innerHTML = '<div class="spinner"></div><p>' + message + '</p>';
+            } else {
+                alertDiv.textContent = message;
+            }
+            
+            messagesDiv.innerHTML = '';
+            messagesDiv.appendChild(alertDiv);
+            
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        }
+        
+        setInterval(() => {
+            fetch('/api/statistics')
+                .then(response => response.json())
+                .then(stats => {
+                    document.getElementById('detections').textContent = stats.total_detections || 0;
+                    document.getElementById('frames').textContent = stats.total_frames || 0;
+                })
+                .catch(console.error);
+        }, 1000);
+    </script>
+</body>
+</html>

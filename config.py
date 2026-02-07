@@ -12,7 +12,7 @@ CACHE_ROOT = PROJECT_ROOT / "cache"
 
 
 class ProcessDetectionConfig:
-    MODEL_NAME = os.getenv("MODEL_NAME", "yolov8n.pt")
+    MODEL_NAME = os.getenv("MODEL_NAME", "yolo11n.pt")
     CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
     IOU_THRESHOLD = float(os.getenv("IOU_THRESHOLD", "0.45"))
     MAX_DETECTIONS = int(os.getenv("MAX_DETECTIONS", "100"))

@@ -7,7 +7,7 @@ def train_custom_model(data_yaml: str, epochs: int = 100,
                       model_size: str = "n"):
     config = ProcessDetectionConfig()
     
-    model_name = f"yolov8{model_size}.pt"
+    model_name = f"yolo11n.pt"
     model = YOLO(model_name)
     
     print(f"Training model: {model_name}")

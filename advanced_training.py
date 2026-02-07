@@ -491,7 +491,7 @@ def train_with_augmentation(data_yaml: str,
                           img_size: int = 640):
     config = ProcessDetectionConfig()
     
-    model = YOLO(f"yolov8n.pt")
+    model = YOLO(f"yolo11n.pt")
     
     augmentation_params = {}
     if use_advanced_augmentation:
@@ -537,10 +537,10 @@ def distill_yolo_model(teacher_path: str,
     config = ProcessDetectionConfig()
     
     teacher = YOLO(teacher_path)
-    student = YOLO(f"yolov8{student_size}.pt")
+    student = YOLO(f"yolov11{student_size}.pt")
     
     print(f"Loading teacher model from: {teacher_path}")
-    print(f"Initializing student model: yolov8{student_size}.pt")
+    print(f"Initializing student model: yolo11{student_size}.pt")
     
     distiller = YOLODistiller(teacher, student, config)
     

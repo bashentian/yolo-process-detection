@@ -2,7 +2,7 @@ from video_processor import VideoProcessor
 from analyzer import ProcessAnalyzer
 from config import ProcessDetectionConfig
 from datetime import datetime
-
+from detector import Detection, ProcessDetector
 
 def example_basic_detection():
     print("=== Basic Detection Example ===\n")
@@ -77,7 +77,7 @@ def example_custom_config():
     from config import ProcessDetectionConfig
     
     config = ProcessDetectionConfig()
-    config.MODEL_NAME = "yolov8s.pt"
+    config.MODEL_NAME = "yolo11n.pt"
     config.CONFIDENCE_THRESHOLD = 0.7
     config.IOU_THRESHOLD = 0.5
     

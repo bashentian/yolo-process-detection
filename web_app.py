@@ -9,6 +9,7 @@ import json
 import asyncio
 from typing import Optional
 import cv2
+import numpy as np
 import threading
 import queue
 import time

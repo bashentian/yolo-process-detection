@@ -89,8 +89,6 @@ yolo_process_detection/
 ├── web_app_simple.py     # 简化版Web应用（新增）
 ├── start_web.py          # Web服务启动脚本（新增）
 ├── requirements.txt          # 依赖包（更新）
-├── Dockerfile              # Docker配置（更新）
-├── docker-compose.yml      # Docker编排（更新）
 ├── WEB_GUIDE.md           # Web界面使用指南（新增）
 ├── templates/
 │   ├── index.html        # Web界面模板
@@ -251,9 +249,6 @@ python model_export.py --model models/yolov8n.pt --compare --test-images img1.jp
 ```bash
 # 启动FastAPI服务
 python api.py
-
-# 或使用Docker
-docker-compose up yolo-api
 ```
 
 #### 监控服务
@@ -306,31 +301,6 @@ start_web.bat
 # 访问Web界面
 # http://localhost:5000
 # http://localhost:5000/docs (API文档)
-```
-
-### Docker部署
-
-```bash
-# 基础API服务
-docker-compose up yolo-api
-
-# Web界面
-docker-compose --profile web up yolo-web
-
-# CPU版本
-docker-compose --profile cpu up yolo-cpu
-
-# 模型优化
-docker-compose --profile optimization up yolo-optimization
-
-# 超参数搜索
-docker-compose --profile hyperparameter up yolo-hyperparameter
-
-# 数据增强
-docker-compose --profile augmentation up yolo-data-augmentation
-
-# 生产环境
-docker-compose --profile production up
 ```
 
 ## API接口文档
@@ -386,7 +356,6 @@ BASELINE_ACCURACY=0.95
 - `ExportConfig` - 模型导出配置
 - `APIDeploymentConfig` - API部署配置
 - `MonitoringConfig` - 监控配置
-- `DockerConfig` - Docker配置
 
 ## 性能指标
 
@@ -406,7 +375,6 @@ BASELINE_ACCURACY=0.95
 - 超参数优化：Optuna
 - 模型导出：ONNX, TensorRT
 - 机器学习：scikit-learn
-- 部署：Docker, Docker Compose
 - 监控：自定义监控框架
 
 ## 常见问题
@@ -440,14 +408,14 @@ DRIFT_THRESHOLD=0.1 python api.py
 
 ### 部署问题
 ```bash
-# 检查容器状态
-docker-compose ps
+# 检查服务状态
+curl http://localhost:8000/health
 
 # 查看日志
-docker-compose logs yolo-api
+tail -f logs/app.log
 
 # 重启服务
-docker-compose restart yolo-api
+python api.py
 ```
 
 ## 许可证

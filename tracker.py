@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 from collections import deque
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 from datetime import datetime
 from collections import defaultdict, Counter
+from threading import Lock
 
 from detector import Detection, ProcessDetector
 from tracker import TrackedObject
@@ -17,6 +18,7 @@ class ProcessAnalyzer:
         self.object_trajectories: Dict[int, List[tuple]] = defaultdict(list)
         self.stage_durations: Dict[str, float] = defaultdict(float)
         self.current_stage_start: Optional[datetime] = None
+        self._lock = Lock()  # 线程锁，保护共享数据
         
     def record_detections(self, detections: List[Detection], frame_number: int,
                          timestamp: datetime):
@@ -35,24 +37,29 @@ class ProcessAnalyzer:
                 for det in detections
             ]
         }
-        self.detection_history.append(detection_data)
+        with self._lock:
+            self.detection_history.append(detection_data)
     
     def record_stage_change(self, stage: str, timestamp: datetime):
-        if self.current_stage_start:
-            duration = (timestamp - self.current_stage_start).total_seconds()
-            self.stage_durations[stage] += duration
-        
-        stage_data = {
-            "timestamp": timestamp.isoformat(),
-            "stage": stage,
-            "duration_since_last_change": duration if self.current_stage_start else 0
-        }
-        self.stage_history.append(stage_data)
-        
-        self.current_stage_start = timestamp
+        with self._lock:
+            if self.current_stage_start:
+                duration = (timestamp - self.current_stage_start).total_seconds()
+                self.stage_durations[stage] += duration
+            else:
+                duration = 0
+            
+            stage_data = {
+                "timestamp": timestamp.isoformat(),
+                "stage": stage,
+                "duration_since_last_change": duration
+            }
+            self.stage_history.append(stage_data)
+            
+            self.current_stage_start = timestamp
     
     def record_trajectory(self, track_id: int, position: tuple):
-        self.object_trajectories[track_id].append(position)
+        with self._lock:
+            self.object_trajectories[track_id].append(position)
     
     def calculate_statistics(self) -> Dict:
         total_detections = sum(len(d["detections"]) for d in self.detection_history)
@@ -207,8 +214,9 @@ class ProcessAnalyzer:
         return dict(obj_stats)
     
     def reset(self):
-        self.detection_history.clear()
-        self.stage_history.clear()
-        self.object_trajectories.clear()
-        self.stage_durations.clear()
-        self.current_stage_start = None
+        with self._lock:
+            self.detection_history.clear()
+            self.stage_history.clear()
+            self.object_trajectories.clear()
+            self.stage_durations.clear()
+            self.current_stage_start = None

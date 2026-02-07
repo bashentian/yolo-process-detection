@@ -1,11 +1,52 @@
 version: '3.8'
 
 services:
-  yolo-detection:
+  yolo-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: yolo_process_detection
+    container_name: yolo_process_detection_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - ./uploads:/app/uploads
+      - ./cache:/app/cache
+      - ./logs:/app/logs
+    environment:
+      - DEVICE=cuda
+      - MODEL_NAME=yolov8n.pt
+      - CONFIDENCE_THRESHOLD=0.5
+      - IOU_THRESHOLD=0.45
+      - MAX_DETECTIONS=100
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  yolo-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_process_detection_web
     ports:
       - "5000:5000"
     volumes:
@@ -14,11 +55,13 @@ services:
       - ./outputs:/app/outputs
       - ./uploads:/app/uploads
       - ./cache:/app/cache
+      - ./templates:/app/templates
     environment:
       - DEVICE=cuda
-      - MODEL_SIZE=n
+      - MODEL_NAME=yolov8n.pt
       - CONFIDENCE_THRESHOLD=0.5
       - IOU_THRESHOLD=0.45
+    command: ["python", "web_interface.py", "--host", "0.0.0.0", "--port", "5000"]
     deploy:
       resources:
         reservations:
@@ -33,23 +76,117 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    profiles:
+      - web
 
-  yolo-detection-cpu:
+  yolo-cpu:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: yolo_process_detection_cpu
     ports:
-      - "5001:5000"
+      - "8001:8000"
     volumes:
       - ./data:/app/data
       - ./models:/app/models
       - ./outputs:/app/outputs
       - ./uploads:/app/uploads
       - ./cache:/app/cache
+      - ./logs:/app/logs
     environment:
       - DEVICE=cpu
-      - MODEL_SIZE=n
+      - MODEL_NAME=yolov8n.pt
+      - CONFIDENCE_THRESHOLD=0.5
+      - IOU_THRESHOLD=0.45
+      - MAX_DETECTIONS=50
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     profiles:
       - cpu
+
+  yolo-optimization:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_model_optimization
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./outputs:/app/outputs
+      - ./cache:/app/cache
+    environment:
+      - DEVICE=cuda
+      - MODEL_NAME=yolov8n.pt
+    command: ["python", "model_optimization.py", "--model", "models/yolov8n.pt", "--data", "data/data.yaml", "--val", "data/val", "--optimization", "full"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles:
+      - optimization
+
+  yolo-hyperparameter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_hyperparameter_search
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./cache:/app/cache
+    environment:
+      - DEVICE=cuda
+      - MODEL_SIZE=n
+    command: ["python", "hyperparameter_search.py", "--data", "data/data.yaml", "--model-size", "n", "--n-trials", "50", "--method", "bayesian"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    profiles:
+      - hyperparameter
+
+  yolo-data-augmentation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_data_augmentation
+    volumes:
+      - ./data:/app/data
+      - ./cache:/app/cache
+    command: ["python", "augmentation.py", "--input", "data/original", "--output", "data/augmented", "--factor", "3", "--augment-ratio", "0.8"]
+    profiles:
+      - augmentation
+
+  nginx:
+    image: nginx:alpine
+    container_name: yolo_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - yolo-api
     restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  data:
+  models:
+  outputs:
+  uploads:
+  cache:
+  logs:

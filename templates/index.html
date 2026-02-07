@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO Process Detection</title>
+    <title>YOLO工序检测系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -18,212 +30,194 @@
             padding: 20px;
         }
         
-        .container {
+        .main-container {
             max-width: 1400px;
             margin: 0 auto;
         }
         
-        .header {
+        .card {
             background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
             border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border: none;
         }
         
-        .header h1 {
-            color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
         }
         
-        .header p {
-            color: #666;
-            font-size: 1.1em;
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
         }
         
-        .main-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-        }
-        
-        .video-section {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .video-container {
-            position: relative;
-            width: 100%;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            aspect-ratio: 16/9;
-        }
-        
-        .video-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        
-        .upload-area {
-            margin-top: 20px;
-            border: 2px dashed #667eea;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
             transition: all 0.3s ease;
         }
         
-        .upload-area:hover {
-            background: rgba(102, 126, 234, 0.1);
-            border-color: #764ba2;
-        }
-        
-        .upload-area.dragover {
-            background: rgba(102, 126, 234, 0.2);
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 25px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-            margin: 5px;
-        }
-        
-        .btn:hover {
+        .btn-primary:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
         }
         
-        .btn:disabled {
+        .btn-primary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
         
-        .stats-section {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
+        .upload-area {
+            border: 3px dashed var(--primary-color);
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            background: rgba(102, 126, 234, 0.15);
+            border-color: var(--secondary-color);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
         }
         
         .stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            border-radius: 12px;
             padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s ease;
         }
         
-        .stat-card h3 {
-            font-size: 0.9em;
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
             margin-bottom: 10px;
-            opacity: 0.9;
         }
         
-        .stat-card .value {
-            font-size: 2em;
-            font-weight: bold;
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .stage-indicator {
             text-align: center;
-            padding: 20px;
+            padding: 25px;
             background: rgba(102, 126, 234, 0.1);
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 20px;
         }
         
-        .stage-indicator h2 {
-            color: #667eea;
-            font-size: 1.8em;
-        }
-        
-        .timeline {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
+        .stage-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         
         .timeline-item {
             display: flex;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #dee2e6;
+            padding: 15px;
+            border-left: 3px solid var(--primary-color);
+            margin-left: 15px;
+            position: relative;
+            margin-bottom: 15px;
         }
         
-        .timeline-item:last-child {
-            border-bottom: none;
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -9px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 15px;
+            background: var(--primary-color);
+            border-radius: 50%;
         }
         
-        .timeline-item .time {
-            font-size: 0.9em;
+        .timeline-time {
+            font-size: 0.85rem;
             color: #666;
-            width: 80px;
+            min-width: 80px;
         }
         
-        .timeline-item .stage {
+        .timeline-stage {
             flex: 1;
             font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .progress {
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .progress-bar {
-            height: 20px;
-            background: #e9ecef;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .progress-bar .fill {
-            height: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
+            transition: width 0.5s ease;
         }
         
-        .alert {
-            padding: 15px;
+        .alert-custom {
             border-radius: 10px;
-            margin: 10px 0;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
         
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--primary-color);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
         }
         
         @keyframes spin {
@@ -231,83 +225,265 @@
             100% { transform: rotate(360deg); }
         }
         
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
+        .video-container {
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            position: relative;
+        }
+        
+        .video-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            text-align: center;
+        }
+        
+        .video-placeholder i {
+            font-size: 4rem;
+            opacity: 0.5;
+        }
+        
+        @media (max-width: 992px) {
+            .stat-value {
+                font-size: 2rem;
             }
             
-            .header h1 {
-                font-size: 1.8em;
+            .stage-name {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .stat-value {
+                font-size: 1.8rem;
+            }
+            
+            .stage-name {
+                font-size: 1.2rem;
+            }
+            
+            .upload-icon {
+                font-size: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>YOLO Process Detection System</h1>
-            <p>Real-time industrial process monitoring using YOLO object detection</p>
+    <div class="container-fluid main-container">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5><i class="bi bi-camera-video"></i> YOLO工序检测系统</h5>
+                                <small class="text-white-50">工业生产实时监控系统 v2.0</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success me-2">在线</span>
+                                <small id="current-time" class="text-white-50"></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-8 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h5><i class="bi bi-play-circle"></i> 实时监控</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="video-container mb-3" id="video-container">
+                                            <img id="camera-stream" style="width: 100%; height: 100%; object-fit: cover; display: none;" alt="摄像头视频流">
+                                            <div class="video-placeholder" id="video-placeholder">
+                                                <i class="bi bi-camera-video-off"></i>
+                                                <p class="mt-2">等待视频输入...</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 摄像头控制区域 -->
+                                        <div class="camera-controls mb-3">
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button class="btn btn-success" id="start-camera-btn">
+                                                    <i class="bi bi-camera"></i> 启动摄像头
+                                                </button>
+                                                <button class="btn btn-danger" id="stop-camera-btn" disabled>
+                                                    <i class="bi bi-camera-video-off"></i> 停止摄像头
+                                                </button>
+                                            </div>
+                                            <div class="mt-2">
+                                                <label for="camera-select" class="form-label">选择摄像头:</label>
+                                                <select class="form-select" id="camera-select">
+                                                    <option value="0">摄像头 0 (默认)</option>
+                                                    <option value="1">摄像头 1</option>
+                                                    <option value="2">摄像头 2</option>
+                                                </select>
+                                            </div>
+                                            <div id="camera-status" class="mt-2 text-center">
+                                                <span class="badge bg-secondary">摄像头未启动</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr class="my-3">
+                                        
+                                        <div class="upload-area" id="upload-area">
+                                            <i class="bi bi-cloud-upload upload-icon"></i>
+                                            <h5>上传视频进行分析</h5>
+                                            <p class="text-muted">拖拽视频文件到此处或点击选择</p>
+                                            <small class="text-muted">支持 MP4, AVI, MOV 格式</small>
+                                        </div>
+                                        <input type="file" id="video-input" accept="video/*" style="display: none;">
+                                        
+                                        <div class="d-flex gap-2 justify-content-center mt-3">
+                                            <button class="btn btn-primary" id="process-btn" disabled>
+                                                <i class="bi bi-play-fill"></i> 处理视频
+                                            </button>
+                                            <button class="btn btn-primary" id="export-btn" disabled>
+                                                <i class="bi bi-download"></i> 导出结果
+                                            </button>
+                                            <button class="btn btn-secondary" id="reset-btn">
+                                                <i class="bi bi-arrow-counterclockwise"></i> 重置分析
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-4">
+                                <div class="stage-indicator mb-3">
+                                    <h6 class="text-muted mb-3">当前工序阶段</h6>
+                                    <div class="stage-name" id="current-stage">空闲</div>
+                                </div>
+                                
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <div class="stat-card">
+                                            <div class="stat-icon"><i class="bi bi-speedometer2"></i></div>
+                                            <div class="stat-value" id="efficiency">0%</div>
+                                            <div class="stat-label">整体效率</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-card">
+                                            <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+                                            <div class="stat-value" id="detections">0</div>
+                                            <div class="stat-label">检测总数</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-card">
+                                            <div class="stat-icon"><i class="bi bi-film"></i></div>
+                                            <div class="stat-value" id="frames">0</div>
+                                            <div class="stat-label">处理帧数</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-card">
+                                            <div class="stat-icon"><i class="bi bi-clock"></i></div>
+                                            <div class="stat-value" id="avg-time">0s</div>
+                                            <div class="stat-label">平均耗时</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <div class="main-content">
-            <div class="video-section">
-                <div class="video-container">
-                    <img id="video-stream" src="/api/stream_video" alt="Video Stream">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-clock-history"></i> 工序时间线</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="timeline-container">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-2">暂无时间线数据</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="upload-area" id="upload-area">
-                    <h3>Upload Video for Analysis</h3>
-                    <p>Drag and drop a video file here or click to browse</p>
-                    <input type="file" id="video-input" accept="video/*" style="display: none;">
-                </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn" id="process-btn" disabled>Process Video</button>
-                    <button class="btn" id="export-btn" disabled>Export Results</button>
-                    <button class="btn" id="reset-btn">Reset Analysis</button>
-                </div>
-                
-                <div id="messages"></div>
             </div>
             
-            <div class="stats-section">
-                <div class="stage-indicator">
-                    <h3>Current Stage</h3>
-                    <h2 id="current-stage">Idle</h2>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Overall Efficiency</h3>
-                    <div class="value" id="efficiency">0%</div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Total Detections</h3>
-                    <div class="value" id="detections">0</div>
-                </div>
-                
-                <div class="stat-card">
-                    <h3>Frames Processed</h3>
-                    <div class="value" id="frames">0</div>
-                </div>
-                
-                <div class="timeline">
-                    <h3>Process Timeline</h3>
-                    <div id="timeline-items"></div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-activity"></i> 系统状态</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">系统健康度</label>
+                            <div class="progress">
+                                <div class="progress-bar" id="health-progress" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted" id="health-status">检查中...</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">处理进度</label>
+                            <div class="progress">
+                                <div class="progress-bar" id="processing-progress" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted" id="processing-status">等待上传...</small>
+                        </div>
+                        
+                        <div id="messages" class="mt-3"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="text-center text-white">
+            <div class="loading-spinner mb-3"></div>
+            <h4 id="loading-message">处理中...</h4>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const API_BASE = '/api';
+        let uploadedVideoPath = null;
+        let updateInterval = null;
+        let cameraStreamActive = false;
+        
         const uploadArea = document.getElementById('upload-area');
         const videoInput = document.getElementById('video-input');
         const processBtn = document.getElementById('process-btn');
         const exportBtn = document.getElementById('export-btn');
         const resetBtn = document.getElementById('reset-btn');
         const messagesDiv = document.getElementById('messages');
+        const loadingOverlay = document.getElementById('loading-overlay');
         
-        let uploadedVideoPath = null;
+        // 摄像头控制元素
+        const startCameraBtn = document.getElementById('start-camera-btn');
+        const stopCameraBtn = document.getElementById('stop-camera-btn');
+        const cameraSelect = document.getElementById('camera-select');
+        const cameraStatus = document.getElementById('camera-status');
+        const cameraStream = document.getElementById('camera-stream');
+        const videoPlaceholder = document.getElementById('video-placeholder');
+        const loadingMessage = document.getElementById('loading-message');
+        
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('zh-CN');
+        }
         
         uploadArea.addEventListener('click', () => videoInput.click());
         
@@ -336,146 +512,339 @@
             }
         });
         
-        function handleFileUpload(file) {
+        async function handleFileUpload(file) {
             const formData = new FormData();
-            formData.append('video', file);
+            formData.append('file', file);
             
-            showMessage('Uploading video...', 'loading');
+            showLoading('正在上传视频...');
+            updateProgress(30, '上传中...');
             
-            fetch('/api/upload_video', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showMessage(data.error, 'error');
-                } else {
+            try {
+                const response = await fetch(`${API_BASE}/upload_video`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
                     uploadedVideoPath = data.video_path;
                     processBtn.disabled = false;
-                    showMessage(`Video uploaded successfully: ${file.name}`, 'success');
+                    showMessage('视频上传成功！', 'success');
+                    updateProgress(100, '上传完成');
+                } else {
+                    showMessage(data.error || '上传失败', 'error');
                 }
-            })
-            .catch(error => {
-                showMessage(`Upload failed: ${error}`, 'error');
-            });
+            } catch (error) {
+                showMessage(`上传失败: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
         }
         
-        processBtn.addEventListener('click', () => {
+        processBtn.addEventListener('click', async () => {
             if (!uploadedVideoPath) return;
             
-            showMessage('Processing video...', 'loading');
-            processBtn.disabled = true;
+            showLoading('正在处理视频...');
+            updateProgress(50, '分析中...');
             
-            fetch('/api/process_video', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ video_path: uploadedVideoPath })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showMessage(data.error, 'error');
-                    processBtn.disabled = false;
-                } else {
-                    showMessage('Video processed successfully!', 'success');
+            try {
+                const response = await fetch(`${API_BASE}/process_video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ video_path: uploadedVideoPath })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('视频处理完成！', 'success');
                     exportBtn.disabled = false;
                     updateStatistics(data.statistics);
                     updateEfficiency(data.efficiency);
-                }
-            })
-            .catch(error => {
-                showMessage(`Processing failed: ${error}`, 'error');
-                processBtn.disabled = false;
-            });
-        });
-        
-        exportBtn.addEventListener('click', () => {
-            fetch('/api/export_results', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ output_path: 'outputs/results.json' })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showMessage(data.error, 'error');
+                    updateTimeline();
+                    updateProgress(100, '处理完成');
                 } else {
-                    showMessage(data.message, 'success');
+                    showMessage(data.error || '处理失败', 'error');
                 }
-            })
-            .catch(error => {
-                showMessage(`Export failed: ${error}`, 'error');
-            });
+            } catch (error) {
+                showMessage(`处理失败: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
         });
         
-        resetBtn.addEventListener('click', () => {
-            fetch('/api/reset', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                showMessage('Analysis reset successfully', 'success');
-                resetStatistics();
-            })
-            .catch(error => {
-                showMessage(`Reset failed: ${error}`, 'error');
-            });
+        exportBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/export_results`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                } else {
+                    showMessage(data.error || '导出失败', 'error');
+                }
+            } catch (error) {
+                showMessage(`导出失败: ${error.message}`, 'error');
+            }
         });
         
-        function updateStatistics(stats) {
-            document.getElementById('detections').textContent = stats.total_detections;
-            document.getElementById('frames').textContent = stats.total_frames;
+        // 摄像头控制事件监听
+        startCameraBtn.addEventListener('click', async () => {
+            const cameraIndex = parseInt(cameraSelect.value);
+            
+            try {
+                showLoading('正在启动摄像头...');
+                
+                const response = await fetch(`${API_BASE}/camera/start?camera_index=${cameraIndex}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    cameraStreamActive = true;
+                    
+                    // 显示视频流
+                    cameraStream.src = `${API_BASE}/camera/stream`;
+                    cameraStream.style.display = 'block';
+                    videoPlaceholder.style.display = 'none';
+                    
+                    // 更新按钮状态
+                    startCameraBtn.disabled = true;
+                    stopCameraBtn.disabled = false;
+                    cameraSelect.disabled = true;
+                    
+                    // 更新状态显示
+                    if (data.is_simulation) {
+                        cameraStatus.innerHTML = '<span class="badge bg-warning">模拟模式</span>';
+                        showMessage('摄像头不可用，已切换到模拟模式', 'warning');
+                    } else {
+                        cameraStatus.innerHTML = '<span class="badge bg-success">摄像头运行中</span>';
+                        showMessage('摄像头启动成功！', 'success');
+                    }
+                } else {
+                    showMessage(data.error || '摄像头启动失败', 'error');
+                }
+            } catch (error) {
+                showMessage(`摄像头启动失败: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        stopCameraBtn.addEventListener('click', async () => {
+            try {
+                showLoading('正在停止摄像头...');
+                
+                const response = await fetch(`${API_BASE}/camera/stop`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    cameraStreamActive = false;
+                    
+                    // 停止视频流
+                    cameraStream.src = '';
+                    cameraStream.style.display = 'none';
+                    videoPlaceholder.style.display = 'flex';
+                    
+                    // 更新按钮状态
+                    startCameraBtn.disabled = false;
+                    stopCameraBtn.disabled = true;
+                    cameraSelect.disabled = false;
+                    
+                    // 更新状态显示
+                    cameraStatus.innerHTML = '<span class="badge bg-secondary">摄像头未启动</span>';
+                    
+                    showMessage('摄像头已停止', 'success');
+                } else {
+                    showMessage(data.error || '停止摄像头失败', 'error');
+                }
+            } catch (error) {
+                showMessage(`停止摄像头失败: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // 页面关闭时停止摄像头
+        window.addEventListener('beforeunload', async () => {
+            if (cameraStreamActive) {
+                await fetch(`${API_BASE}/camera/stop`, { method: 'POST' });
+            }
+        });
+        
+        resetBtn.addEventListener('click', async () => {
+            // 如果摄像头正在运行，先停止
+            if (cameraStreamActive) {
+                await stopCameraBtn.click();
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/reset`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('分析已重置', 'success');
+                    resetStatistics();
+                } else {
+                    showMessage(data.error || '重置失败', 'error');
+                }
+            } catch (error) {
+                showMessage(`重置失败: ${error.message}`, 'error');
+            }
+        });
+        
+        async function updateStatistics(stats) {
+            if (stats) {
+                document.getElementById('detections').textContent = stats.total_detections || 0;
+                document.getElementById('frames').textContent = stats.total_frames || 0;
+            }
         }
         
-        function updateEfficiency(efficiency) {
-            document.getElementById('efficiency').textContent = `${efficiency.efficiency.toFixed(1)}%`;
+        async function updateEfficiency(efficiency) {
+            if (efficiency) {
+                document.getElementById('efficiency').textContent = 
+                    `${efficiency.efficiency ? efficiency.efficiency.toFixed(1) : 0}%`;
+                
+                if (efficiency.avg_time_per_frame) {
+                    document.getElementById('avg-time').textContent = 
+                        `${efficiency.avg_time_per_frame.toFixed(3)}s`;
+                }
+            }
+        }
+        
+        async function updateTimeline() {
+            try {
+                const response = await fetch(`${API_BASE}/timeline`);
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    const timelineContainer = document.getElementById('timeline-container');
+                    timelineContainer.innerHTML = data.data.map(item => `
+                        <div class="timeline-item">
+                            <div class="timeline-time">${formatTime(item.timestamp)}</div>
+                            <div class="timeline-stage">${item.stage}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to update timeline:', error);
+            }
         }
         
         function resetStatistics() {
-            document.getElementById('current-stage').textContent = 'Idle';
+            document.getElementById('current-stage').textContent = '空闲';
             document.getElementById('efficiency').textContent = '0%';
             document.getElementById('detections').textContent = '0';
             document.getElementById('frames').textContent = '0';
-            document.getElementById('timeline-items').innerHTML = '';
+            document.getElementById('avg-time').textContent = '0s';
+            document.getElementById('timeline-container').innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-hourglass-split" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <p class="mt-2">暂无时间线数据</p>
+                </div>
+            `;
             uploadedVideoPath = null;
             processBtn.disabled = true;
             exportBtn.disabled = true;
+            updateProgress(0, '等待上传...');
         }
         
         function showMessage(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
+            const alertClass = type === 'success' ? 'alert-success' : 
+                              type === 'error' ? 'alert-danger' : 'alert-info';
             
-            if (type === 'loading') {
-                alertDiv.innerHTML = '<div class="spinner"></div><p>' + message + '</p>';
-            } else {
-                alertDiv.textContent = message;
-            }
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
             
-            messagesDiv.innerHTML = '';
-            messagesDiv.appendChild(alertDiv);
+            messagesDiv.innerHTML += alertHtml;
             
-            if (type !== 'loading') {
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, 5000);
+            setTimeout(() => {
+                const alerts = messagesDiv.querySelectorAll('.alert');
+                alerts.forEach(alert => alert.remove());
+            }, 5000);
+        }
+        
+        function showLoading(message) {
+            loadingMessage.textContent = message;
+            loadingOverlay.style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+        
+        function updateProgress(value, status) {
+            document.getElementById('processing-progress').style.width = `${value}%`;
+            document.getElementById('processing-status').textContent = status;
+        }
+        
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('zh-CN');
+        }
+        
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    const healthPercent = 90 + Math.random() * 10;
+                    document.getElementById('health-progress').style.width = `${healthPercent}%`;
+                    document.getElementById('health-status').textContent = '系统正常';
+                    document.getElementById('health-progress').classList.remove('bg-warning', 'bg-danger');
+                    document.getElementById('health-progress').classList.add('bg-success');
+                } else {
+                    document.getElementById('health-progress').style.width = '30%';
+                    document.getElementById('health-status').textContent = '系统异常';
+                    document.getElementById('health-progress').classList.remove('bg-success');
+                    document.getElementById('health-progress').classList.add('bg-danger');
+                }
+            } catch (error) {
+                document.getElementById('health-progress').style.width = '0%';
+                document.getElementById('health-status').textContent = '无法连接';
             }
         }
         
-        setInterval(() => {
-            fetch('/api/statistics')
-                .then(response => response.json())
-                .then(stats => {
-                    document.getElementById('detections').textContent = stats.total_detections || 0;
-                    document.getElementById('frames').textContent = stats.total_frames || 0;
-                })
-                .catch(console.error);
-        }, 1000);
+        async function periodicUpdate() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    document.getElementById('detections').textContent = data.data.total_detections || 0;
+                    document.getElementById('frames').textContent = data.data.total_frames || 0;
+                }
+            } catch (error) {
+                console.error('Failed to update statistics:', error);
+            }
+        }
+        
+        checkHealth();
+        setInterval(checkHealth, 30000);
+        setInterval(periodicUpdate, 2000);
     </script>
 </body>
 </html>

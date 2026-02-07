@@ -1,288 +1,220 @@
-import cv2
-import numpy as np
+import logging
+import sys
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import Optional
 from datetime import datetime
+import functools
+import traceback
 
 
-def create_video_from_images(image_dir: str, output_path: str, 
-                              fps: int = 30, pattern: str = "*.jpg"):
-    images = sorted(Path(image_dir).glob(pattern))
+def setup_logging(log_dir: Optional[Path] = None, log_level: int = logging.INFO) -> logging.Logger:
+    """设置日志记录
     
-    if not images:
-        raise ValueError(f"No images found in {image_dir}")
-    
-    first_image = cv2.imread(str(images[0]))
-    height, width = first_image.shape[:2]
-    
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    
-    for image_path in images:
-        frame = cv2.imread(str(image_path))
-        writer.write(frame)
-    
-    writer.release()
-    print(f"Video created from {len(images)} images: {output_path}")
-
-
-def split_video(video_path: str, output_dir: str, 
-                segment_duration: int = 30):
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    segment_frames = int(fps * segment_duration)
-    num_segments = total_frames // segment_frames
-    
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    for seg_idx in range(num_segments):
-        output_file = output_path / f"segment_{seg_idx:03d}.mp4"
+    Args:
+        log_dir: 日志文件目录，如果为None则只输出到控制台
+        log_level: 日志级别
         
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        writer = cv2.VideoWriter(str(output_file), fourcc, fps, (width, height))
-        
-        start_frame = seg_idx * segment_frames
-        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-        
-        for _ in range(segment_frames):
-            ret, frame = cap.read()
-            if not ret:
-                break
-            writer.write(frame)
-        
-        writer.release()
-        print(f"Created segment {seg_idx + 1}/{num_segments}")
+    Returns:
+        配置好的logger实例
+    """
+    logger = logging.getLogger("yolo_process_detection")
+    logger.setLevel(log_level)
     
-    cap.release()
-
-
-def resize_video(input_path: str, output_path: str, 
-                target_width: int = 640, target_height: int = 480):
-    cap = cv2.VideoCapture(input_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    if logger.handlers:
+        logger.handlers.clear()
     
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (target_width, target_height))
-    
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        
-        resized = cv2.resize(frame, (target_width, target_height))
-        writer.write(resized)
-    
-    cap.release()
-    writer.release()
-    print(f"Video resized to {target_width}x{target_height}: {output_path}")
-
-
-def extract_audio_from_video(video_path: str, output_path: str):
-    try:
-        import moviepy.editor as mp
-        
-        video = mp.VideoFileClip(video_path)
-        audio = video.audio
-        
-        if audio is not None:
-            audio.write_audiofile(output_path)
-            print(f"Audio extracted to: {output_path}")
-        else:
-            print("No audio track found in the video")
-    except ImportError:
-        print("moviepy not installed. Install with: pip install moviepy")
-
-
-def merge_video_audio(video_path: str, audio_path: str, output_path: str):
-    try:
-        import moviepy.editor as mp
-        
-        video = mp.VideoFileClip(video_path)
-        audio = mp.AudioFileClip(audio_path)
-        
-        final_video = video.set_audio(audio)
-        final_video.write_videofile(output_path)
-        
-        print(f"Video and audio merged: {output_path}")
-    except ImportError:
-        print("moviepy not installed. Install with: pip install moviepy")
-
-
-def create_comparison_video(original_path: str, annotated_path: str, 
-                           output_path: str):
-    cap_orig = cv2.VideoCapture(original_path)
-    cap_annot = cv2.VideoCapture(annotated_path)
-    
-    fps = cap_orig.get(cv2.CAP_PROP_FPS)
-    width = int(cap_orig.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap_orig.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    
-    output_width = width * 2
-    output_height = height
-    
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (output_width, output_height))
-    
-    while True:
-        ret1, frame1 = cap_orig.read()
-        ret2, frame2 = cap_annot.read()
-        
-        if not ret1 or not ret2:
-            break
-        
-        combined = np.hstack([frame1, frame2])
-        writer.write(combined)
-    
-    cap_orig.release()
-    cap_annot.release()
-    writer.release()
-    
-    print(f"Comparison video created: {output_path}")
-
-
-def add_timestamp(frame: np.ndarray, timestamp: str, 
-                  position: Tuple[int, int] = (10, 30),
-                  font_scale: float = 1.0, color: Tuple[int, int, int] = (255, 255, 255)):
-    cv2.putText(frame, timestamp, position, 
-                cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, 2)
-    return frame
-
-
-def add_watermark(frame: np.ndarray, watermark_text: str,
-                 position: str = "bottom-right",
-                 alpha: float = 0.5):
-    overlay = frame.copy()
-    
-    h, w = frame.shape[:2]
-    font_scale = min(w, h) / 1000
-    
-    (text_width, text_height), _ = cv2.getTextSize(
-        watermark_text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 2
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
     
-    if position == "bottom-right":
-        x = w - text_width - 20
-        y = h - 20
-    elif position == "bottom-left":
-        x = 20
-        y = h - 20
-    elif position == "top-right":
-        x = w - text_width - 20
-        y = text_height + 20
-    else:  # top-left
-        x = 20
-        y = text_height + 20
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
     
-    cv2.putText(overlay, watermark_text, (x, y),
-                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 2)
-    
-    return cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
-
-
-def create_video_summary(video_path: str, output_path: str, 
-                         summary_duration: int = 30,
-                         num_frames: int = 30):
-    cap = cv2.VideoCapture(video_path)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    
-    frame_interval = total_frames // num_frames
-    
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    
-    frames_per_summary_frame = int(fps * summary_duration / num_frames)
-    
-    for i in range(num_frames):
-        frame_num = i * frame_interval
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
-        ret, frame = cap.read()
+    if log_dir:
+        log_dir = Path(log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
         
-        if ret:
-            for _ in range(frames_per_summary_frame):
-                writer.write(frame)
-    
-    cap.release()
-    writer.release()
-    
-    print(f"Video summary created: {output_path} ({summary_duration}s)")
-
-
-def detect_video_properties(video_path: str) -> dict:
-    cap = cv2.VideoCapture(video_path)
-    
-    properties = {
-        'width': int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
-        'height': int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-        'fps': cap.get(cv2.CAP_PROP_FPS),
-        'total_frames': int(cap.get(cv2.CAP_PROP_FRAME_COUNT)),
-        'duration': cap.get(cv2.CAP_PROP_FRAME_COUNT) / cap.get(cv2.CAP_PROP_FPS)
-    }
-    
-    cap.release()
-    
-    return properties
-
-
-def create_dataset_from_video(video_path: str, output_dir: str,
-                             frame_interval: int = 30,
-                             resize: Optional[Tuple[int, int]] = None):
-    cap = cv2.VideoCapture(video_path)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    frame_count = 0
-    saved_count = 0
-    
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        log_file = log_dir / f"app_{timestamp}.log"
         
-        if frame_count % frame_interval == 0:
-            if resize:
-                frame = cv2.resize(frame, resize)
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler.setLevel(log_level)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        
+        logger.info(f"日志文件已创建: {log_file}")
+    
+    return logger
+
+
+def log_execution_time(logger: Optional[logging.Logger] = None):
+    """装饰器：记录函数执行时间
+    
+    Args:
+        logger: 日志记录器，如果为None则使用默认logger
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            nonlocal logger
+            if logger is None:
+                logger = logging.getLogger("yolo_process_detection")
             
-            output_file = output_path / f"frame_{saved_count:06d}.jpg"
-            cv2.imwrite(str(output_file), frame)
-            saved_count += 1
+            start_time = datetime.now()
+            try:
+                result = func(*args, **kwargs)
+                end_time = datetime.now()
+                execution_time = (end_time - start_time).total_seconds()
+                logger.debug(f"函数 {func.__name__} 执行时间: {execution_time:.4f}秒")
+                return result
+            except Exception as e:
+                end_time = datetime.now()
+                execution_time = (end_time - start_time).total_seconds()
+                logger.error(f"函数 {func.__name__} 执行失败 (耗时{execution_time:.4f}秒): {str(e)}")
+                logger.error(traceback.format_exc())
+                raise
+        return wrapper
+    return decorator
+
+
+def handle_exceptions(logger: Optional[logging.Logger] = None, default_return=None):
+    """装饰器：捕获并处理异常
+    
+    Args:
+        logger: 日志记录器
+        default_return: 异常时的默认返回值
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            nonlocal logger
+            if logger is None:
+                logger = logging.getLogger("yolo_process_detection")
+            
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.error(f"函数 {func.__name__} 发生异常: {str(e)}")
+                logger.error(traceback.format_exc())
+                return default_return
+        return wrapper
+    return decorator
+
+
+class PerformanceMonitor:
+    """性能监控类"""
+    
+    def __init__(self, logger: Optional[logging.Logger] = None):
+        self.logger = logger or logging.getLogger("yolo_process_detection")
+        self.metrics = {}
         
-        frame_count += 1
-    
-    cap.release()
-    
-    print(f"Extracted {saved_count} frames from {total_frames} total frames")
-    print(f"Images saved to: {output_dir}")
-
-
-def batch_resize_images(input_dir: str, output_dir: str,
-                        target_size: Tuple[int, int] = (640, 640)):
-    input_path = Path(input_dir)
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
-    
-    image_files = list(input_path.glob("*.jpg")) + list(input_path.glob("*.png"))
-    
-    for i, img_path in enumerate(image_files):
-        img = cv2.imread(str(img_path))
-        resized = cv2.resize(img, target_size)
-        output_file = output_path / img_path.name
-        cv2.imwrite(str(output_file), resized)
+    def start_timer(self, name: str):
+        """开始计时"""
+        self.metrics[name] = {'start': datetime.now(), 'end': None, 'duration': None}
         
-        print(f"\rResized {i+1}/{len(image_files)} images", end="")
+    def end_timer(self, name: str) -> float:
+        """结束计时并返回耗时"""
+        if name in self.metrics:
+            self.metrics[name]['end'] = datetime.now()
+            duration = (self.metrics[name]['end'] - self.metrics[name]['start']).total_seconds()
+            self.metrics[name]['duration'] = duration
+            self.logger.debug(f"{name} 耗时: {duration:.4f}秒")
+            return duration
+        return 0.0
+        
+    def get_metrics(self) -> dict:
+        """获取所有性能指标"""
+        return {name: data['duration'] for name, data in self.metrics.items() if data['duration'] is not None}
+        
+    def print_summary(self):
+        """打印性能摘要"""
+        self.logger.info("=" * 50)
+        self.logger.info("性能监控摘要")
+        self.logger.info("=" * 50)
+        for name, duration in self.get_metrics().items():
+            self.logger.info(f"{name}: {duration:.4f}秒")
+        self.logger.info("=" * 50)
+
+
+def validate_image_path(image_path: Path) -> bool:
+    """验证图像路径是否有效
     
-    print(f"\nResized {len(image_files)} images to {target_size}")
+    Args:
+        image_path: 图像文件路径
+        
+    Returns:
+        是否有效
+    """
+    if not image_path.exists():
+        return False
+    if not image_path.is_file():
+        return False
+    
+    valid_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.webp'}
+    return image_path.suffix.lower() in valid_extensions
 
 
-if __name__ == "__main__":
-    print("Video Utilities Module")
-    print("Import this module to use utility functions for video processing")
+def validate_video_path(video_path: Path) -> bool:
+    """验证视频路径是否有效
+    
+    Args:
+        video_path: 视频文件路径
+        
+    Returns:
+        是否有效
+    """
+    if not video_path.exists():
+        return False
+    if not video_path.is_file():
+        return False
+    
+    valid_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'}
+    return video_path.suffix.lower() in valid_extensions
+
+
+def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> float:
+    """安全除法，避免除以零错误
+    
+    Args:
+        numerator: 分子
+        denominator: 分母
+        default: 除零时的默认值
+        
+    Returns:
+        除法结果或默认值
+    """
+    if denominator == 0:
+        return default
+    return numerator / denominator
+
+
+class ProgressTracker:
+    """进度跟踪器"""
+    
+    def __init__(self, total: int, description: str = "Processing", logger: Optional[logging.Logger] = None):
+        self.total = total
+        self.current = 0
+        self.description = description
+        self.logger = logger or logging.getLogger("yolo_process_detection")
+        self.start_time = datetime.now()
+        
+    def update(self, increment: int = 1):
+        """更新进度"""
+        self.current += increment
+        percentage = (self.current / self.total) * 100 if self.total > 0 else 0
+        
+        elapsed = (datetime.now() - self.start_time).total_seconds()
+        if self.current > 0:
+            estimated_total = elapsed * self.total / self.current
+            remaining = estimated_total - elapsed
+            self.logger.info(f"{self.description}: {self.current}/{self.total} ({percentage:.1f}%) - 预计剩余: {remaining:.1f}秒")
+        else:
+            self.logger.info(f"{self.description}: {self.current}/{self.total} ({percentage:.1f}%)")
+            
+    def finish(self):
+        """完成进度"""
+        elapsed = (datetime.now() - self.start_time).total_seconds()
+        self.logger.info(f"{self.description} 完成! 总耗时: {elapsed:.2f}秒")

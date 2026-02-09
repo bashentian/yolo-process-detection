@@ -51,32 +51,54 @@ def setup_logging(log_dir: Optional[Path] = None, log_level: int = logging.INFO)
 
 
 def log_execution_time(logger: Optional[logging.Logger] = None):
-    """装饰器：记录函数执行时间
-    
+    """装饰器：记录函数执行时间（支持同步和异步函数）
+
     Args:
         logger: 日志记录器，如果为None则使用默认logger
     """
     def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            nonlocal logger
-            if logger is None:
-                logger = logging.getLogger("yolo_process_detection")
-            
-            start_time = datetime.now()
-            try:
-                result = func(*args, **kwargs)
-                end_time = datetime.now()
-                execution_time = (end_time - start_time).total_seconds()
-                logger.debug(f"函数 {func.__name__} 执行时间: {execution_time:.4f}秒")
-                return result
-            except Exception as e:
-                end_time = datetime.now()
-                execution_time = (end_time - start_time).total_seconds()
-                logger.error(f"函数 {func.__name__} 执行失败 (耗时{execution_time:.4f}秒): {str(e)}")
-                logger.error(traceback.format_exc())
-                raise
-        return wrapper
+        if asyncio.iscoroutinefunction(func):
+            @functools.wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                nonlocal logger
+                if logger is None:
+                    logger = logging.getLogger("yolo_process_detection")
+
+                start_time = datetime.now()
+                try:
+                    result = await func(*args, **kwargs)
+                    end_time = datetime.now()
+                    execution_time = (end_time - start_time).total_seconds()
+                    logger.debug(f"函数 {func.__name__} 执行时间: {execution_time:.4f}秒")
+                    return result
+                except Exception as e:
+                    end_time = datetime.now()
+                    execution_time = (end_time - start_time).total_seconds()
+                    logger.error(f"函数 {func.__name__} 执行失败 (耗时{execution_time:.4f}秒): {str(e)}")
+                    logger.error(traceback.format_exc())
+                    raise
+            return async_wrapper
+        else:
+            @functools.wraps(func)
+            def sync_wrapper(*args, **kwargs):
+                nonlocal logger
+                if logger is None:
+                    logger = logging.getLogger("yolo_process_detection")
+
+                start_time = datetime.now()
+                try:
+                    result = func(*args, **kwargs)
+                    end_time = datetime.now()
+                    execution_time = (end_time - start_time).total_seconds()
+                    logger.debug(f"函数 {func.__name__} 执行时间: {execution_time:.4f}秒")
+                    return result
+                except Exception as e:
+                    end_time = datetime.now()
+                    execution_time = (end_time - start_time).total_seconds()
+                    logger.error(f"函数 {func.__name__} 执行失败 (耗时{execution_time:.4f}秒): {str(e)}")
+                    logger.error(traceback.format_exc())
+                    raise
+            return sync_wrapper
     return decorator
 
 

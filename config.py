@@ -48,6 +48,13 @@ class ProcessDetectionConfig:
     TRACKING_ENABLED = True
     TRACKING_MAX_AGE = 30
     TRACKING_MIN_HITS = 3
+    
+    # 新增：YOLOv12高级功能参数
+    USE_ATTENTION = os.getenv("USE_ATTENTION", "False").lower() in ("true", "1", "yes")
+    ANOMALY_THRESHOLD = float(os.getenv("ANOMALY_THRESHOLD", "0.5"))
+    ANOMALY_HISTORY_SIZE = int(os.getenv("ANOMALY_HISTORY_SIZE", "100"))
+    EFFICIENCY_WINDOW_SIZE = int(os.getenv("EFFICIENCY_WINDOW_SIZE", "50"))
+    SCENE_UNDERSTANDING_ENABLED = os.getenv("SCENE_UNDERSTANDING_ENABLED", "True").lower() in ("true", "1", "yes")
 
 
 class AugmentationConfig:

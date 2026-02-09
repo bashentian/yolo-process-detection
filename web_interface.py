@@ -240,6 +240,147 @@ def reset_analysis():
     analyzer.reset()
     return jsonify({'message': 'Analysis reset successfully'})
 
+@app.route('/api/detect/advanced', methods=['POST'])
+def detect_advanced():
+    """
+    高级检测接口
+    集成场景理解、异常检测和效率分析
+    """
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+    
+    file = request.files['image']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        import io
+        from PIL import Image
+        
+        image_bytes = file.read()
+        image = Image.open(io.BytesIO(image_bytes))
+        frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        
+        # 使用高级检测
+        result = detector.detect_advanced(frame)
+        
+        return jsonify({
+            'success': True,
+            'detections': [
+                {
+                    'bbox': det.bbox,
+                    'confidence': det.confidence,
+                    'class_id': det.class_id,
+                    'class_name': det.class_name
+                }
+                for det in result['detections']
+            ],
+            'scene': {
+                'stage': result['scene']['stage'],
+                'confidence': result['scene']['confidence'],
+                'context': result['scene']['context'],
+                'features': result['scene']['scene_features']
+            },
+            'anomaly': {
+                'is_anomaly': result['anomaly']['is_anomaly'],
+                'score': result['anomaly']['score'],
+                'type': result['anomaly']['type'],
+                'reasons': result['anomaly']['reasons']
+            },
+            'efficiency': {
+                'score': result['efficiency']['score'],
+                'status': result['efficiency']['status'],
+                'throughput': result['efficiency']['throughput'],
+                'latency': result['efficiency']['latency'],
+                'accuracy': result['efficiency']['accuracy'],
+                'trend': result['efficiency']['trend'],
+                'recommendations': result['efficiency']['recommendations']
+            },
+            'processing_time': result['processing_time']
+        })
+    except Exception as e:
+        logger.error(f"Error in advanced detection: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/scene', methods=['POST'])
+def analyze_scene():
+    """
+    场景分析接口
+    """
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+    
+    file = request.files['image']
+    
+    try:
+        import io
+        from PIL import Image
+        
+        image_bytes = file.read()
+        image = Image.open(io.BytesIO(image_bytes))
+        frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        
+        # 基础检测
+        detections = detector.detect(frame)
+        
+        # 场景理解
+        scene_info = detector.scene_understanding.identify_stage(detections, frame)
+        
+        return jsonify({
+            'success': True,
+            'scene': scene_info
+        })
+    except Exception as e:
+        logger.error(f"Error in scene analysis: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/anomaly', methods=['POST'])
+def detect_anomaly():
+    """
+    异常检测接口
+    """
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+    
+    file = request.files['image']
+    
+    try:
+        import io
+        from PIL import Image
+        
+        image_bytes = file.read()
+        image = Image.open(io.BytesIO(image_bytes))
+        frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        
+        # 基础检测
+        detections = detector.detect(frame)
+        
+        # 异常检测
+        anomaly_info = detector.anomaly_detector.detect(detections, 0.1)
+        
+        return jsonify({
+            'success': True,
+            'anomaly': anomaly_info
+        })
+    except Exception as e:
+        logger.error(f"Error in anomaly detection: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/efficiency/advanced', methods=['GET'])
+def get_efficiency_advanced():
+    """
+    高级效率分析接口
+    """
+    try:
+        efficiency_info = detector.efficiency_analyzer.analyze()
+        return jsonify({
+            'success': True,
+            'efficiency': efficiency_info
+        })
+    except Exception as e:
+        logger.error(f"Error in efficiency analysis: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     templates_dir = Path(__file__).parent / 'templates'

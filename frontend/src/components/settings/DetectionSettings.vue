@@ -1,0 +1,250 @@
+<template>
+  <div class="settings-section">
+    <div class="settings-section-header">
+      <div class="settings-section-title">
+        <i class="bi bi-eye"></i>
+        检测参数
+      </div>
+    </div>
+    <div class="settings-section-body">
+      <div class="switch-container">
+        <div class="switch-info">
+          <div class="switch-label">启用目标跟踪</div>
+          <div class="switch-description">启用多目标跟踪，为每个检测目标分配唯一ID</div>
+        </div>
+        <label class="switch">
+          <input v-model="settings.detection.enableTracking" type="checkbox">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">跟踪最大年龄</label>
+          <input
+            v-model.number="settings.detection.trackMaxAge"
+            type="number"
+            class="form-input"
+            min="1"
+            max="100"
+          >
+          <div class="form-help">目标消失后保持跟踪ID的最大帧数</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">跟踪最小命中数</label>
+          <input
+            v-model.number="settings.detection.trackMinHits"
+            type="number"
+            class="form-input"
+            min="1"
+            max="10"
+          >
+          <div class="form-help">创建新跟踪目标所需的最小连续检测次数</div>
+        </div>
+      </div>
+
+      <div class="switch-container">
+        <div class="switch-info">
+          <div class="switch-label">启用分类</div>
+          <div class="switch-description">对检测到的目标进行细粒度分类</div>
+        </div>
+        <label class="switch">
+          <input v-model="settings.detection.enableClassification" type="checkbox">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="switch-container">
+        <div class="switch-info">
+          <div class="switch-label">启用分割</div>
+          <div class="switch-description">对检测到的目标进行像素级分割</div>
+        </div>
+        <label class="switch">
+          <input v-model="settings.detection.enableSegmentation" type="checkbox">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+import { useSettingsStore } from '@/stores/settings'
+
+const settingsStore = useSettingsStore()
+
+const settings = computed(() => settingsStore.settings)
+</script>
+
+<style scoped>
+.settings-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.settings-section-header {
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.settings-section-body {
+  padding: var(--space-lg);
+}
+
+.form-group {
+  margin-bottom: var(--space-lg);
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+}
+
+.form-help {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: var(--space-xs);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--hk-primary);
+  box-shadow: 0 0 0 3px var(--hk-primary-200);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-lg);
+}
+
+.switch-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.switch-container:last-child {
+  border-bottom: none;
+}
+
+.switch-info {
+  flex: 1;
+}
+
+.switch-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.switch-description {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.switch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  margin-left: var(--space-md);
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 24px;
+  transition: all var(--transition-fast);
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+
+.switch input:checked + .switch-slider {
+  background: var(--hk-primary);
+  border-color: var(--hk-primary);
+}
+
+.switch input:checked + .switch-slider:before {
+  transform: translateX(24px);
+  background: white;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

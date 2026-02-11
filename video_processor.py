@@ -15,8 +15,8 @@ class VideoProcessor:
         self.config = config
         self.detector = ProcessDetector(config)
         self.tracker = ObjectTracker(
-            max_age=config.TRACKING_MAX_AGE,
-            min_hits=config.TRACKING_MIN_HITS
+            max_age=getattr(config, 'tracking_max_age', 30),
+            min_hits=getattr(config, 'tracking_min_hits', 3)
         )
         
         self.video_source = None

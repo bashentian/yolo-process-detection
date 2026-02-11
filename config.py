@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
+from dataclasses import dataclass, field
+from enum import Enum
+
 
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_ROOT = PROJECT_ROOT / "data"
@@ -11,50 +14,165 @@ UPLOADS_ROOT = PROJECT_ROOT / "uploads"
 CACHE_ROOT = PROJECT_ROOT / "cache"
 
 
+def _parse_env_bool(value: str, default: bool = False) -> bool:
+    """解析布尔值环境变量"""
+    return value.lower() in ("true", "1", "yes", "on") if isinstance(value, str) else default
+
+
+def _parse_env_list(value: str, default: str = "") -> List[str]:
+    """解析列表环境变量"""
+    if not value:
+        return default.split(",") if default else []
+    return [item.strip() for item in value.split(",")]
+
+
+@dataclass
 class ProcessDetectionConfig:
-    MODEL_NAME = os.getenv("MODEL_NAME", "yolo11n.pt")
-    CONFIDENCE_THRESHOLD = float(os.getenv("CONFIDENCE_THRESHOLD", "0.5"))
-    IOU_THRESHOLD = float(os.getenv("IOU_THRESHOLD", "0.45"))
-    MAX_DETECTIONS = int(os.getenv("MAX_DETECTIONS", "100"))
+    """工序检测配置类
     
-    DEVICE = os.getenv("DEVICE", "cuda" if os.getenv("CUDA_VISIBLE_DEVICES") else "cpu")
+    支持实例化配置和动态更新
+    """
     
-    VIDEO_SOURCE = 0
+    # 基础配置
+    model_name: str = field(default="yolo11n.pt")
+    confidence_threshold: float = field(default=0.5)
+    iou_threshold: float = field(default=0.45)
+    max_detections: int = field(default=100)
     
-    FRAME_RESIZE = (640, 640)
-    DISPLAY_SIZE = (1280, 720)
+    device: str = field(default="cpu")
+    video_source: int = field(default=0)
     
-    FPS_LIMIT = 30
+    frame_resize: tuple = field(default=(640, 640))
+    display_size: tuple = field(default=(1280, 720))
+    fps_limit: int = field(default=30)
     
-    SAVE_RESULTS = True
-    OUTPUT_FORMAT = "mp4"
+    save_results: bool = field(default=True)
+    output_format: str = field(default="mp4")
     
-    CLASS_NAMES: Dict[int, str] = {
+    class_names: Dict[int, str] = field(default_factory=lambda: {
         0: "worker",
         1: "machine",
         2: "product",
         3: "tool",
         4: "material"
-    }
+    })
     
-    PROCESS_STAGES: List[str] = [
+    process_stages: List[str] = field(default_factory=lambda: [
         "preparation",
         "processing",
         "assembly",
         "quality_check",
         "packaging"
-    ]
+    ])
     
-    TRACKING_ENABLED = True
-    TRACKING_MAX_AGE = 30
-    TRACKING_MIN_HITS = 3
+    # 跟踪配置
+    tracking_enabled: bool = field(default=True)
+    tracking_max_age: int = field(default=30)
+    tracking_min_hits: int = field(default=3)
     
-    # 新增：YOLOv12高级功能参数
-    USE_ATTENTION = os.getenv("USE_ATTENTION", "False").lower() in ("true", "1", "yes")
-    ANOMALY_THRESHOLD = float(os.getenv("ANOMALY_THRESHOLD", "0.5"))
-    ANOMALY_HISTORY_SIZE = int(os.getenv("ANOMALY_HISTORY_SIZE", "100"))
-    EFFICIENCY_WINDOW_SIZE = int(os.getenv("EFFICIENCY_WINDOW_SIZE", "50"))
-    SCENE_UNDERSTANDING_ENABLED = os.getenv("SCENE_UNDERSTANDING_ENABLED", "True").lower() in ("true", "1", "yes")
+    # YOLOv12高级功能配置
+    use_attention: bool = field(default=False)
+    scene_understanding_enabled: bool = field(default=True)
+    anomaly_threshold: float = field(default=0.5)
+    anomaly_history_size: int = field(default=100)
+    efficiency_window_size: int = field(default=50)
+    
+    def __post_init__(self):
+        """初始化后处理"""
+        # 从环境变量加载
+        self.model_name = os.getenv("MODEL_NAME", self.model_name)
+        self.confidence_threshold = float(os.getenv("CONFIDENCE_THRESHOLD", self.confidence_threshold))
+        self.iou_threshold = float(os.getenv("IOU_THRESHOLD", self.iou_threshold))
+        self.max_detections = int(os.getenv("MAX_DETECTIONS", self.max_detections))
+        
+        cuda_visible = os.getenv("CUDA_VISIBLE_DEVICES")
+        self.device = "cuda" if cuda_visible else "cpu"
+        
+        self.use_attention = _parse_env_bool(os.getenv("USE_ATTENTION", str(self.use_attention)))
+        self.scene_understanding_enabled = _parse_env_bool(
+            os.getenv("SCENE_UNDERSTANDING_ENABLED", str(self.scene_understanding_enabled))
+        )
+        self.anomaly_threshold = float(os.getenv("ANOMALY_THRESHOLD", self.anomaly_threshold))
+        self.anomaly_history_size = int(os.getenv("ANOMALY_HISTORY_SIZE", self.anomaly_history_size))
+        self.efficiency_window_size = int(os.getenv("EFFICIENCY_WINDOW_SIZE", self.efficiency_window_size))
+    
+    def update(self, **kwargs):
+        """动态更新配置
+        
+        Args:
+            **kwargs: 配置参数名和值
+        """
+        valid_params = {
+            'model_name', 'confidence_threshold', 'iou_threshold', 'max_detections',
+            'device', 'video_source', 'frame_resize', 'display_size', 'fps_limit',
+            'save_results', 'output_format', 'tracking_enabled', 'tracking_max_age',
+            'tracking_min_hits', 'use_attention', 'scene_understanding_enabled',
+            'anomaly_threshold', 'anomaly_history_size', 'efficiency_window_size'
+        }
+        
+        for key, value in kwargs.items():
+            if key in valid_params:
+                setattr(self, key, value)
+            else:
+                raise ValueError(f"无效的配置参数: {key}")
+    
+    def validate(self) -> Dict[str, Any]:
+        """验证配置有效性
+        
+        Returns:
+            Dict: 验证结果
+        """
+        errors = []
+        
+        if not 0 < self.confidence_threshold <= 1:
+            errors.append(f"confidence_threshold必须在0-1之间: {self.confidence_threshold}")
+        
+        if not 0 < self.iou_threshold <= 1:
+            errors.append(f"iou_threshold必须在0-1之间: {self.iou_threshold}")
+        
+        if self.max_detections < 1:
+            errors.append(f"max_detections必须大于0: {self.max_detections}")
+        
+        if self.fps_limit < 1:
+            errors.append(f"fps_limit必须大于0: {self.fps_limit}")
+        
+        if not 0 < self.anomaly_threshold <= 1:
+            errors.append(f"anomaly_threshold必须在0-1之间: {self.anomaly_threshold}")
+        
+        return {
+            'valid': len(errors) == 0,
+            'errors': errors
+        }
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典
+        
+        Returns:
+            Dict: 配置字典
+        """
+        return {
+            'model_name': self.model_name,
+            'confidence_threshold': self.confidence_threshold,
+            'iou_threshold': self.iou_threshold,
+            'max_detections': self.max_detections,
+            'device': self.device,
+            'video_source': self.video_source,
+            'frame_resize': self.frame_resize,
+            'display_size': self.display_size,
+            'fps_limit': self.fps_limit,
+            'save_results': self.save_results,
+            'output_format': self.output_format,
+            'class_names': self.class_names,
+            'process_stages': self.process_stages,
+            'tracking_enabled': self.tracking_enabled,
+            'tracking_max_age': self.tracking_max_age,
+            'tracking_min_hits': self.tracking_min_hits,
+            'use_attention': self.use_attention,
+            'scene_understanding_enabled': self.scene_understanding_enabled,
+            'anomaly_threshold': self.anomaly_threshold,
+            'anomaly_history_size': self.anomaly_history_size,
+            'efficiency_window_size': self.efficiency_window_size
+        }
 
 
 class AugmentationConfig:

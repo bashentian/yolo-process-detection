@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO智能检测平台 - 控制台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ========================================
+           设计系统 - Design Tokens
+           ======================================== */
+        :root {
+            /* 主色调 - 海康蓝 */
+            --hk-primary: #0066FF;
+            --hk-primary-light: #3385FF;
+            --hk-primary-dark: #0052CC;
+            --hk-primary-50: rgba(0, 102, 255, 0.05);
+            --hk-primary-100: rgba(0, 102, 255, 0.1);
+            --hk-primary-200: rgba(0, 102, 255, 0.2);
+            
+            /* 功能色 */
+            --success: #00C853;
+            --warning: #FFB300;
+            --error: #FF1744;
+            --info: #00B0FF;
+            
+            /* 中性色 - 深色主题 */
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #21262D;
+            --bg-elevated: #1C2128;
+            
+            /* 文字色 */
+            --text-primary: #F0F6FC;
+            --text-secondary: #8B949E;
+            --text-tertiary: #6E7681;
+            --text-disabled: #484F58;
+            
+            /* 边框 */
+            --border-primary: #30363D;
+            --border-secondary: #21262D;
+            
+            /* 间距系统 */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            
+            /* 圆角 */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            
+            /* 阴影 */
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(0, 102, 255, 0.3);
+            
+            /* 字体 */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            
+            /* 过渡 */
+            --transition-fast: 150ms ease;
+            --transition-normal: 250ms ease;
+            --transition-slow: 350ms ease;
+        }
+
+        /* ========================================
+           基础样式
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        /* ========================================
+           布局系统
+           ======================================== */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-primary);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            transition: width var(--transition-normal);
+        }
+
+        .sidebar-collapsed {
+            width: 64px;
+        }
+
+        /* Logo区域 */
+        .sidebar-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--hk-primary) 0%, var(--hk-primary-light) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+
+        .sidebar-collapsed .logo-text {
+            display: none;
+        }
+
+        /* 导航菜单 */
+        .sidebar-nav {
+            flex: 1;
+            padding: var(--space-md) 0;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .nav-section-title {
+            padding: var(--space-sm) var(--space-lg);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+        }
+
+        .sidebar-collapsed .nav-section-title {
+            display: none;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-sm) var(--space-lg);
+            margin: 2px var(--space-sm);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            gap: var(--space-md);
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--hk-primary-100);
+            color: var(--hk-primary);
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .nav-item span {
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .sidebar-collapsed .nav-item span {
+            display: none;
+        }
+
+        /* 侧边栏底部 */
+        .sidebar-footer {
+            padding: var(--space-md);
+            border-top: 1px solid var(--border-primary);
+        }
+
+        .collapse-btn {
+            width: 100%;
+            padding: var(--space-sm);
+            background: transparent;
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            transition: all var(--transition-fast);
+        }
+
+        .collapse-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-collapsed .collapse-btn span {
+            display: none;
+        }
+
+        /* ========================================
+           主内容区
+           ======================================== */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: margin-left var(--transition-normal);
+        }
+
+        .sidebar-collapsed + .main-content {
+            margin-left: 64px;
+        }
+
+        /* 顶部导航栏 */
+        .top-header {
+            height: 64px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--space-xl);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumb .active {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        /* 搜索框 */
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 280px;
+            padding: var(--space-sm) var(--space-md) var(--space-sm) 36px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--hk-primary);
+            box-shadow: 0 0 0 3px var(--hk-primary-200);
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-tertiary);
+        }
+
+        /* 头部按钮 */
+        .header-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+
+        .header-btn:hover {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+        }
+
+        .header-btn .badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: var(--error);
+            border-radius: 50%;
+        }
+
+        /* 用户信息 */
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .user-menu:hover {
+            background: var(--bg-elevated);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--hk-primary) 0%, var(--hk-primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        /* ========================================
+           内容区域
+           ======================================== */
+        .content-wrapper {
+            flex: 1;
+            padding: var(--space-xl);
+            overflow-y: auto;
+        }
+
+        .page-header {
+            margin-bottom: var(--space-xl);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ========================================
+           组件 - 统计卡片
+           ======================================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+            transition: all var(--transition-normal);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-md);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .stat-icon.primary {
+            background: var(--hk-primary-100);
+            color: var(--hk-primary);
+        }
+
+        .stat-icon.success {
+            background: rgba(0, 200, 83, 0.1);
+            color: var(--success);
+        }
+
+        .stat-icon.warning {
+            background: rgba(255, 179, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .stat-icon.error {
+            background: rgba(255, 23, 68, 0.1);
+            color: var(--error);
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .stat-trend.up {
+            color: var(--success);
+        }
+
+        .stat-trend.down {
+            color: var(--error);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ========================================
+           组件 - 卡片
+           ======================================== */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .card-body {
+            padding: var(--space-lg);
+        }
+
+        /* ========================================
+           组件 - 按钮
+           ======================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--hk-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--hk-primary-light);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-elevated);
+            border-color: var(--border-secondary);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-lg {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+
+        /* ========================================
+           组件 - 状态标签
+           ======================================== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .status-badge.running {
+            background: rgba(0, 200, 83, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.running::before {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.pending {
+            background: rgba(255, 179, 0, 0.15);
+            color: var(--warning);
+        }
+
+        .status-badge.pending::before {
+            background: var(--warning);
+        }
+
+        .status-badge.error {
+            background: rgba(255, 23, 68, 0.15);
+            color: var(--error);
+        }
+
+        .status-badge.error::before {
+            background: var(--error);
+        }
+
+        .status-badge.completed {
+            background: rgba(0, 176, 255, 0.15);
+            color: var(--info);
+        }
+
+        .status-badge.completed::before {
+            background: var(--info);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* ========================================
+           组件 - 表格
+           ======================================== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: var(--space-md);
+            text-align: left;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .data-table th {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+        }
+
+        .data-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+
+        .data-table td {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        /* ========================================
+           组件 - 视频流容器
+           ======================================== */
+        .video-container {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 16 / 9;
+        }
+
+        .video-container img,
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .video-info-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: var(--space-md);
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .video-controls {
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            display: flex;
+            gap: var(--space-sm);
+        }
+
+        .video-control-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-md);
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            pointer-events: auto;
+        }
+
+        .video-control-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        /* ========================================
+           组件 - 检测结果面板
+           ======================================== */
+        .detection-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .detection-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .detection-item:last-child {
+            border-bottom: none;
+        }
+
+        .detection-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .detection-info {
+            flex: 1;
+        }
+
+        .detection-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .detection-meta {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .detection-confidence {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--hk-primary);
+        }
+
+        /* ========================================
+           组件 - 日志面板
+           ======================================== */
+        .log-panel {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: var(--space-sm);
+            padding: 2px 0;
+        }
+
+        .log-time {
+            color: var(--text-tertiary);
+            flex-shrink: 0;
+        }
+
+        .log-level {
+            width: 40px;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        .log-level.info {
+            color: var(--info);
+        }
+
+        .log-level.success {
+            color: var(--success);
+        }
+
+        .log-level.warning {
+            color: var(--warning);
+        }
+
+        .log-level.error {
+            color: var(--error);
+        }
+
+        .log-message {
+            color: var(--text-secondary);
+        }
+
+        /* ========================================
+           组件 - 上传区域
+           ======================================== */
+        .upload-zone {
+            border: 2px dashed var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-2xl);
+            text-align: center;
+            background: var(--bg-tertiary);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--hk-primary);
+            background: var(--hk-primary-50);
+        }
+
+        .upload-zone i {
+            font-size: 48px;
+            color: var(--hk-primary);
+            margin-bottom: var(--space-md);
+        }
+
+        .upload-zone h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .upload-zone p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ========================================
+           组件 - 进度条
+           ======================================== */
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--hk-primary) 0%, var(--hk-primary-light) 100%);
+            border-radius: 4px;
+            transition: width var(--transition-normal);
+        }
+
+        /* ========================================
+           响应式布局
+           ======================================== */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box input {
+                width: 200px;
+            }
+
+            .user-info {
+                display: none;
+            }
+        }
+
+        /* ========================================
+           工具类
+           ======================================== */
+        .d-flex {
+            display: flex;
+        }
+
+        .flex-column {
+            flex-direction: column;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-sm {
+            gap: var(--space-sm);
+        }
+
+        .gap-md {
+            gap: var(--space-md);
+        }
+
+        .gap-lg {
+            gap: var(--space-lg);
+        }
+
+        .mt-md {
+            margin-top: var(--space-md);
+        }
+
+        .mt-lg {
+            margin-top: var(--space-lg);
+        }
+
+        .mb-md {
+            margin-bottom: var(--space-md);
+        }
+
+        .mb-lg {
+            margin-bottom: var(--space-lg);
+        }
+
+        .text-primary {
+            color: var(--text-primary);
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
+        .text-warning {
+            color: var(--warning);
+        }
+
+        .text-error {
+            color: var(--error);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-lg);
+        }
+
+        @media (max-width: 992px) {
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="bi bi-eye-fill"></i>
+                </div>
+                <span class="logo-text">AI检测平台</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主菜单</div>
+                    <a href="#" class="nav-item active">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>控制台</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-camera-video-fill"></i>
+                        <span>实时检测</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-upload"></i>
+                        <span>批量检测</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        <span>数据分析</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">管理</div>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-folder-fill"></i>
+                        <span>任务管理</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>系统设置</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-journal-text"></i>
+                        <span>操作日志</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="collapse-btn" onclick="toggleSidebar()">
+                    <i class="bi bi-chevron-left"></i>
+                    <span>收起侧边栏</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部导航栏 -->
+            <header class="top-header">
+                <div class="header-left">
+                    <nav class="breadcrumb">
+                        <a href="#"><i class="bi bi-house-door"></i></a>
+                        <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+                        <span class="active">控制台</span>
+                    </nav>
+                </div>
+
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="搜索任务、模型或设置...">
+                    </div>
+
+                    <button class="header-btn">
+                        <i class="bi bi-bell"></i>
+                        <span class="badge"></span>
+                    </button>
+
+                    <button class="header-btn">
+                        <i class="bi bi-question-circle"></i>
+                    </button>
+
+                    <div class="user-menu">
+                        <div class="user-avatar">A</div>
+                        <div class="user-info">
+                            <span class="user-name">管理员</span>
+                            <span class="user-role">系统管理员</span>
+                        </div>
+                        <i class="bi bi-chevron-down" style="font-size: 12px; color: var(--text-tertiary);"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 内容区域 -->
+            <div class="content-wrapper">
+                <!-- 页面标题 -->
+                <div class="page-header">
+                    <h1 class="page-title">控制台</h1>
+                    <p class="page-subtitle">实时监控检测任务状态和系统性能</p>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon primary">
+                                <i class="bi bi-camera-video"></i>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="bi bi-arrow-up-short"></i>
+                                <span>12%</span>
+                            </div>
+                        </div>
+                        <div class="stat-value">24</div>
+                        <div class="stat-label">活跃检测任务</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon success">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="bi bi-arrow-up-short"></i>
+                                <span>8%</span>
+                            </div>
+                        </div>
+                        <div class="stat-value">1,284</div>
+                        <div class="stat-label">今日检测完成</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon warning">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-trend down">
+                                <i class="bi bi-arrow-down-short"></i>
+                                <span>3%</span>
+                            </div>
+                        </div>
+                        <div class="stat-value">45ms</div>
+                        <div class="stat-label">平均检测延迟</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon error">
+                                <i class="bi bi-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-trend up">
+                                <i class="bi bi-arrow-up-short"></i>
+                                <span>2</span>
+                            </div>
+                        </div>
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">异常告警</div>
+                    </div>
+                </div>
+
+                <!-- 主要内容区 -->
+                <div class="grid-2">
+                    <!-- 实时视频流 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="bi bi-broadcast" style="color: var(--error);"></i>
+                                实时检测画面
+                            </div>
+                            <span class="status-badge running">运行中</span>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="video-container">
+                                <img src="/static/placeholder-video.jpg" alt="实时视频流">
+                                <div class="video-overlay">
+                                    <div class="video-controls">
+                                        <button class="video-control-btn">
+                                            <i class="bi bi-fullscreen"></i>
+                                        </button>
+                                        <button class="video-control-btn">
+                                            <i class="bi bi-camera"></i>
+                                        </button>
+                                    </div>
+                                    <div class="video-info-bar">
+                                        <div style="display: flex; align-items: center; gap: var(--space-md);">
+                                            <span style="color: white; font-size: 12px;">
+                                                <i class="bi bi-circle-fill" style="color: var(--error); font-size: 8px; margin-right: 6px;"></i>
+                                                摄像头 01
+                                            </span>
+                                            <span style="color: rgba(255,255,255,0.7); font-size: 12px;">|</span>
+                                            <span style="color: rgba(255,255,255,0.7); font-size: 12px;">30 FPS</span>
+                                        </div>
+                                        <span style="color: rgba(255,255,255,0.7); font-size: 12px;">1920×1080</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 检测结果 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="bi bi-bounding-box" style="color: var(--hk-primary);"></i>
+                                实时检测结果
+                            </div>
+                            <button class="btn btn-ghost btn-sm">
+                                <i class="bi bi-download"></i>
+                                导出
+                            </button>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="detection-panel">
+                                <div class="detection-item">
+                                    <div class="detection-color" style="background: #00C853;"></div>
+                                    <div class="detection-info">
+                                        <div class="detection-name">工件A - 正常</div>
+                                        <div class="detection-meta">位置: (120, 340) | 大小: 85×120px</div>
+                                    </div>
+                                    <div class="detection-confidence">98.5%</div>
+                                </div>
+                                <div class="detection-item">
+                                    <div class="detection-color" style="background: #00C853;"></div>
+                                    <div class="detection-info">
+                                        <div class="detection-name">工件B - 正常</div>
+                                        <div class="detection-meta">位置: (280, 420) | 大小: 95×110px</div>
+                                    </div>
+                                    <div class="detection-confidence">96.2%</div>
+                                </div>
+                                <div class="detection-item">
+                                    <div class="detection-color" style="background: #FFB300;"></div>
+                                    <div class="detection-info">
+                                        <div class="detection-name">工件C - 待确认</div>
+                                        <div class="detection-meta">位置: (450, 280) | 大小: 75×90px</div>
+                                    </div>
+                                    <div class="detection-confidence">82.7%</div>
+                                </div>
+                                <div class="detection-item">
+                                    <div class="detection-color" style="background: #00C853;"></div>
+                                    <div class="detection-info">
+                                        <div class="detection-name">工件D - 正常</div>
+                                        <div class="detection-meta">位置: (580, 380) | 大小: 88×105px</div>
+                                    </div>
+                                    <div class="detection-confidence">94.8%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二行 -->
+                <div class="grid-2 mt-lg">
+                    <!-- 任务列表 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="bi bi-list-task" style="color: var(--info);"></i>
+                                最近任务
+                            </div>
+                            <a href="#" style="font-size: 14px; color: var(--hk-primary); text-decoration: none;">查看全部</a>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>任务ID</th>
+                                        <th>类型</th>
+                                        <th>状态</th>
+                                        <th>进度</th>
+                                        <th>时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>#TASK-2024</td>
+                                        <td>视频检测</td>
+                                        <td><span class="status-badge running">运行中</span></td>
+                                        <td>
+                                            <div class="progress-bar" style="width: 100px;">
+                                                <div class="progress-fill" style="width: 65%;"></div>
+                                            </div>
+                                        </td>
+                                        <td>2分钟前</td>
+                                    </tr>
+                                    <tr>
+                                        <td>#TASK-2023</td>
+                                        <td>批量检测</td>
+                                        <td><span class="status-badge completed">已完成</span></td>
+                                        <td>
+                                            <div class="progress-bar" style="width: 100px;">
+                                                <div class="progress-fill" style="width: 100%;"></div>
+                                            </div>
+                                        </td>
+                                        <td>15分钟前</td>
+                                    </tr>
+                                    <tr>
+                                        <td>#TASK-2022</td>
+                                        <td>实时流</td>
+                                        <td><span class="status-badge running">运行中</span></td>
+                                        <td>
+                                            <div class="progress-bar" style="width: 100px;">
+                                                <div class="progress-fill" style="width: 42%;"></div>
+                                            </div>
+                                        </td>
+                                        <td>32分钟前</td>
+                                    </tr>
+                                    <tr>
+                                        <td>#TASK-2021</td>
+                                        <td>图片检测</td>
+                                        <td><span class="status-badge error">失败</span></td>
+                                        <td>
+                                            <div class="progress-bar" style="width: 100px;">
+                                                <div class="progress-fill" style="width: 30%; background: var(--error);"></div>
+                                            </div>
+                                        </td>
+                                        <td>1小时前</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 系统日志 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">
+                                <i class="bi bi-terminal" style="color: var(--text-secondary);"></i>
+                                系统日志
+                            </div>
+                            <div style="display: flex; gap: var(--space-sm);">
+                                <button class="btn btn-ghost btn-sm">
+                                    <i class="bi bi-pause"></i>
+                                </button>
+                                <button class="btn btn-ghost btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: var(--space-md);">
+                            <div class="log-panel">
+                                <div class="log-entry">
+                                    <span class="log-time">10:42:15</span>
+                                    <span class="log-level success">INFO</span>
+                                    <span class="log-message">检测任务 TASK-2024 启动成功</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="log-time">10:42:12</span>
+                                    <span class="log-level info">DEBUG</span>
+                                    <span class="log-message">模型加载完成: yolov8n.pt (用时 245ms)</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="log-time">10:41:58</span>
+                                    <span class="log-level warning">WARN</span>
+                                    <span class="log-message">摄像头 02 连接超时，尝试重连...</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="log-time">10:41:45</span>
+                                    <span class="log-level success">INFO</span>
+                                    <span class="log-message">批量检测任务完成: 成功 156/160</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="log-time">10:41:30</span>
+                                    <span class="log-level error">ERROR</span>
+                                    <span class="log-message">任务 TASK-2021 执行失败: 内存不足</span>
+                                </div>
+                                <div class="log-entry">
+                                    <span class="log-time">10:41:15</span>
+                                    <span class="log-level info">DEBUG</span>
+                                    <span class="log-message">系统资源监控: CPU 45% | 内存 62%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 侧边栏折叠
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-collapsed');
+        }
+
+        // 导航项激活状态
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // 搜索框焦点效果
+        const searchInput = document.querySelector('.search-box input');
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+
+        // 模拟实时数据更新
+        setInterval(() => {
+            // 更新统计数值
+            const statValues = document.querySelectorAll('.stat-value');
+            statValues[2].textContent = Math.floor(Math.random() * 20 + 35) + 'ms';
+        }, 3000);
+
+        // 拖拽上传
+        const uploadZone = document.querySelector('.upload-zone');
+        if (uploadZone) {
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                // 处理文件上传
+            });
+        }
+    </script>
+</body>
+</html>

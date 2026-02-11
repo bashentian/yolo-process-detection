@@ -150,7 +150,7 @@ class SceneUnderstanding:
         if context_parts:
             return "、".join(context_parts)
         else:
-            return f"检测到{len(set(class_names))类对象"
+            return f"检测到{len(set(class_names))}类对象"
 
 
 class AnomalyDetection:
@@ -411,11 +411,15 @@ class ProcessDetector:
         
         # 新增：高级分析模块
         self.scene_understanding = SceneUnderstanding()
-        self.anomaly_detector = AnomalyDetection(history_size=100)
-        self.efficiency_analyzer = EfficiencyAnalyzer(window_size=50)
+        self.anomaly_detector = AnomalyDetection(
+            history_size=getattr(config, 'anomaly_history_size', 100)
+        )
+        self.efficiency_analyzer = EfficiencyAnalyzer(
+            window_size=getattr(config, 'efficiency_window_size', 50)
+        )
         
         # 新增：YOLOv12注意力模块（可选）
-        self.use_attention = getattr(config, 'USE_ATTENTION', False)
+        self.use_attention = getattr(config, 'use_attention', False)
         if self.use_attention:
             self.attention_module = RegionalAttention(dim=256)
         
@@ -426,29 +430,28 @@ class ProcessDetector:
         """
         # 构建模型路径
         models_dir = Path(__file__).parent.parent / "models"
-        model_path = models_dir / self.config.MODEL_NAME
-
+        model_path = models_dir / self.config.model_name
+        
         if model_path.exists():
             # 从本地加载模型
             model = YOLO(str(model_path))
         else:
             # 下载模型（YOLOv11会自动从Ultralytics Hub下载）
             models_dir.mkdir(parents=True, exist_ok=True)
-            model = YOLO(self.config.MODEL_NAME)
-
+            model = YOLO(self.config.model_name)
+            
             # 保存模型到本地（如果可保存）
             try:
-                model.export(format="engine") if self.config.DEVICE != "cpu" else None
+                model.export(format="engine") if self.config.device != "cpu" else None
                 model.save(str(model_path))
-            except Exception:
-                # 某些模型可能不支持保存，忽略错误
-                pass
-
+            except Exception as e:
+                logger.warning(f"模型保存失败: {e}")
+        
         # 设置模型参数
-        model.conf = self.config.CONFIDENCE_THRESHOLD
-        model.iou = self.config.IOU_THRESHOLD
-        model.max_det = self.config.MAX_DETECTIONS
-
+        model.conf = self.config.confidence_threshold
+        model.iou = self.config.iou_threshold
+        model.max_det = self.config.max_detections
+        
         return model
     
     def detect(self, frame: np.ndarray) -> List[Detection]:

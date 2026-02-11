@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import deque
 
 from detector import Detection
@@ -45,6 +45,21 @@ class ObjectTracker:
         self.iou_threshold = iou_threshold
         self.tracks: Dict[int, TrackedObject] = {}
         self.next_track_id = 1
+        self._track_id_pool: deque = field(default_factory=deque)
+        
+    def _get_track_id(self) -> int:
+        """获取track ID，支持循环使用"""
+        if self._track_id_pool:
+            return self._track_id_pool.popleft()
+        else:
+            track_id = self.next_track_id
+            self.next_track_id += 1
+            return track_id
+    
+    def _recycle_track_id(self, track_id: int):
+        """回收track ID"""
+        if track_id < self.next_track_id - 1000:
+            self._track_id_pool.append(track_id)
         
     def update(self, detections: List[Detection]) -> List[TrackedObject]:
         if not self.tracks:
@@ -52,7 +67,7 @@ class ObjectTracker:
                 self._create_new_track(det)
             return self._get_active_tracks()
         
-        matched_indices = self._match_detections(detections)
+        matched_indices = self._match_detections_vectorized(detections)
         
         unmatched_detections = []
         for i, det in enumerate(detections):
@@ -77,7 +92,67 @@ class ObjectTracker:
         
         return self._get_active_tracks()
     
+    def _match_detections_vectorized(self, detections: List[Detection]) -> Dict[str, List[int]]:
+        """向量化的检测匹配（性能优化）"""
+        n_det = len(detections)
+        n_track = len(self.tracks)
+        
+        if n_det == 0 or n_track == 0:
+            return {0: [], 1: []}
+        
+        det_bboxes = np.array([det.bbox for det in detections], dtype=np.float32)
+        track_bboxes = np.array([track.detection.bbox for track in self.tracks.values()], dtype=np.float32)
+        
+        iou_matrix = self._calculate_iou_vectorized(det_bboxes, track_bboxes)
+        
+        matched_detections = []
+        matched_tracks = []
+        
+        threshold = self.iou_threshold
+        while np.max(iou_matrix) >= threshold:
+            max_iou_idx = np.unravel_index(np.argmax(iou_matrix), iou_matrix.shape)
+            det_idx, track_idx = max_iou_idx
+            
+            track_id = list(self.tracks.keys())[track_idx]
+            
+            matched_detections.append(int(det_idx))
+            matched_tracks.append(track_id)
+            
+            iou_matrix[det_idx, :] = -1
+            iou_matrix[:, track_idx] = -1
+            
+            if len(matched_detections) >= min(n_det, n_track):
+                break
+        
+        return {0: matched_detections, 1: matched_tracks}
+    
+    def _calculate_iou_vectorized(self, bboxes1: np.ndarray, bboxes2: np.ndarray) -> np.ndarray:
+        """向量化的IoU计算（性能优化）"""
+        n1 = bboxes1.shape[0]
+        n2 = bboxes2.shape[0]
+        
+        bboxes1 = bboxes1.reshape(n1, 1, 4)
+        bboxes2 = bboxes2.reshape(1, n2, 4)
+        
+        x1_min = np.maximum(bboxes1[:, :, 0], bboxes2[:, :, 0])
+        y1_min = np.maximum(bboxes1[:, :, 1], bboxes2[:, :, 1])
+        x2_min = np.minimum(bboxes1[:, :, 2], bboxes2[:, :, 2])
+        y2_min = np.minimum(bboxes1[:, :, 3], bboxes2[:, :, 3])
+        
+        inter_w = np.maximum(0, x2_min - x1_min)
+        inter_h = np.maximum(0, y2_min - y1_min)
+        inter_area = inter_w * inter_h
+        
+        area1 = (bboxes1[:, :, 2] - bboxes1[:, :, 0]) * (bboxes1[:, :, 3] - bboxes1[:, :, 1])
+        area2 = (bboxes2[:, :, 2] - bboxes2[:, :, 0]) * (bboxes2[:, :, 3] - bboxes2[:, :, 1])
+        union_area = area1 + area2 - inter_area
+        
+        iou = np.where(union_area > 0, inter_area / union_area, 0)
+        
+        return iou
+    
     def _match_detections(self, detections: List[Detection]) -> Dict[str, List[int]]:
+        """原始匹配方法（保留兼容）"""
         iou_matrix = np.zeros((len(detections), len(self.tracks)))
         
         for i, det in enumerate(detections):

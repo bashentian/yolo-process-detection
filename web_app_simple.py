@@ -1,18 +1,28 @@
+"""
+简化版Web应用 - 已弃用
+请使用 web_interface.py 或 web_app.py
+"""
+
+import warnings
+warnings.warn(
+    "web_app_simple.py 已弃用。请使用 web_interface.py 或 web_app.py。",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from pathlib import Path
 import uvicorn
-from datetime import datetime, timedelta
-import json
-from typing import Optional
-import numpy as np
+from datetime import datetime
+import os
 
 app = FastAPI(
-    title="YOLO Process Detection Web",
-    description="Industrial process monitoring using YOLO",
-    version="2.0.0"
+    title="YOLO Process Detection Web (Deprecated)",
+    description="Industrial process monitoring using YOLO - PLEASE USE web_interface.py INSTEAD",
+    version="2.0.0-deprecated"
 )
 
 templates = Jinja2Templates(directory="templates")
@@ -25,11 +35,29 @@ Path("outputs").mkdir(exist_ok=True)
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "deprecated": True,
+        "message": "此版本已弃用，请使用 web_interface.py"
+    })
+
+
+@app.get("/api/health")
+async def health_check():
+    """健康检查"""
+    return {
+        "status": "deprecated",
+        "message": "Please use web_interface.py or web_app.py instead",
+        "alternative": {
+            "api": "http://localhost:8000/docs",
+            "web": "http://localhost:5000"
+        }
+    }
 
 
 @app.post("/api/upload_video")
 async def upload_video(file: UploadFile = File(...)):
+    """视频上传接口"""
     try:
         upload_dir = Path("uploads")
         upload_dir.mkdir(exist_ok=True)
@@ -45,170 +73,86 @@ async def upload_video(file: UploadFile = File(...)):
             "success": True,
             "message": "Video uploaded successfully",
             "video_path": str(video_path),
-            "filename": file.filename
+            "filename": file.filename,
+            "note": "This is a deprecated endpoint"
         }
     except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-@app.post("/api/process_video")
-async def process_video_endpoint(request: Request):
-    try:
-        data = await request.json()
-        video_path = data.get('video_path')
-        
-        if not video_path:
-            return {"success": False, "error": "No video path provided"}
-        
-        return {
-            "success": True,
-            "message": "Video processed successfully",
-            "output_path": f"outputs/result_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4",
-            "statistics": {
-                "total_frames": np.random.randint(100, 1000),
-                "total_detections": np.random.randint(500, 5000),
-                "detections_per_frame": np.random.uniform(2, 10),
-                "class_distribution": {
-                    "product": np.random.randint(200, 1000),
-                    "worker": np.random.randint(50, 200),
-                    "machine": np.random.randint(100, 300)
-                },
-                "stage_distribution": {
-                    "production": np.random.randint(50, 200),
-                    "assembly": np.random.randint(30, 150),
-                    "quality": np.random.randint(20, 100)
-                },
-                "stage_durations": {
-                    "production": np.random.uniform(10, 50),
-                    "assembly": np.random.uniform(5, 30),
-                    "quality": np.random.uniform(2, 15)
-                },
-                "average_confidence": np.random.uniform(0.85, 0.98),
-                "tracked_objects": np.random.randint(10, 50)
-            },
-            "efficiency": {
-                "efficiency": np.random.uniform(75, 95),
-                "bottleneck": np.random.choice(["production", "assembly", "quality"]),
-                "stage_percentages": {
-                    "production": np.random.uniform(30, 50),
-                    "assembly": np.random.uniform(20, 40),
-                    "quality": np.random.uniform(10, 30)
-                },
-                "total_duration": np.random.uniform(60, 300),
-                "active_time": np.random.uniform(50, 250),
-                "idle_time": np.random.uniform(10, 50),
-                "avg_time_per_frame": np.random.uniform(0.01, 0.1)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e),
+                "note": "Please use web_interface.py instead"
             }
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+        )
 
 
 @app.get("/api/statistics")
 async def get_statistics():
-    try:
-        return {
-            "success": True,
-            "data": {
-                "total_frames": np.random.randint(100, 1000),
-                "total_detections": np.random.randint(500, 5000),
-                "detections_per_frame": np.random.uniform(2, 10),
-                "class_distribution": {
-                    "product": np.random.randint(200, 1000),
-                    "worker": np.random.randint(50, 200),
-                    "machine": np.random.randint(100, 300)
-                }
-            }
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    """统计信息 - 提示用户使用完整版本"""
+    return {
+        "success": False,
+        "message": "This endpoint requires web_interface.py",
+        "solution": "Run: python web_interface.py"
+    }
 
 
 @app.get("/api/efficiency")
 async def get_efficiency():
-    try:
-        return {
-            "success": True,
-            "data": {
-                "efficiency": np.random.uniform(75, 95),
-                "bottleneck": np.random.choice(["production", "assembly", "quality"]),
-                "stage_percentages": {
-                    "production": np.random.uniform(30, 50),
-                    "assembly": np.random.uniform(20, 40),
-                    "quality": np.random.uniform(10, 30)
-                },
-                "total_duration": np.random.uniform(60, 300),
-                "active_time": np.random.uniform(50, 250),
-                "idle_time": np.random.uniform(10, 50),
-                "avg_time_per_frame": np.random.uniform(0.01, 0.1)
-            }
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    """效率信息 - 提示用户使用完整版本"""
+    return {
+        "success": False,
+        "message": "This endpoint requires web_interface.py",
+        "solution": "Run: python web_interface.py"
+    }
 
 
 @app.get("/api/timeline")
 async def get_timeline():
-    try:
-        stages = ["production", "assembly", "quality", "idle"]
-        timeline = []
-        base_time = datetime.now()
-        
-        for i in range(10):
-            timeline.append({
-                "timestamp": (base_time.replace(microsecond=0) + 
-                             timedelta(minutes=i*5)).isoformat(),
-                "stage": stages[i % len(stages)]
-            })
-        
-        return {"success": True, "data": timeline}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    """时间线 - 提示用户使用完整版本"""
+    return {
+        "success": False,
+        "message": "This endpoint requires web_interface.py",
+        "solution": "Run: python web_interface.py"
+    }
 
 
 @app.get("/api/anomalies")
 async def get_anomalies():
-    try:
-        return {
-            "success": True,
-            "data": []
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    """异常检测 - 提示用户使用完整版本"""
+    return {
+        "success": False,
+        "message": "This endpoint requires web_interface.py",
+        "solution": "Run: python web_interface.py"
+    }
 
 
 @app.post("/api/reset")
 async def reset_analysis():
-    try:
-        return {"success": True, "message": "Analysis reset successfully"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    """重置分析"""
+    return {
+        "success": True,
+        "message": "Analysis reset",
+        "note": "For full functionality, use web_interface.py"
+    }
 
 
 @app.post("/api/export_results")
 async def export_results():
-    try:
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_path = f"outputs/results_{timestamp}.json"
-        return {"success": True, "message": f"Results exported to {output_path}"}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
-@app.get("/api/health")
-async def health_check():
+    """导出结果"""
     return {
-        "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
-        "model_loaded": True
+        "success": False,
+        "message": "This endpoint requires web_interface.py",
+        "solution": "Run: python web_interface.py"
     }
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "web_app_simple:app",
-        host="0.0.0.0",
-        port=5000,
-        reload=True,
-        log_level="info"
-    )
+    print("\n" + "="*60)
+    print("WARNING: web_app_simple.py is deprecated!")
+    print("Please use web_interface.py instead:")
+    print("  python web_interface.py")
+    print("="*60 + "\n")
+    
+    port = int(os.getenv("PORT", 5000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - YOLO智能检测平台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 设计系统 - 复用相同的变量 */
+        :root {
+            --hk-primary: #0066FF;
+            --hk-primary-light: #3385FF;
+            --hk-primary-dark: #0052CC;
+            --hk-primary-50: rgba(0, 102, 255, 0.05);
+            --hk-primary-100: rgba(0, 102, 255, 0.1);
+            --hk-primary-200: rgba(0, 102, 255, 0.2);
+            --success: #00C853;
+            --warning: #FFB300;
+            --error: #FF1744;
+            --info: #00B0FF;
+            --bg-primary: #0D1117;
+            --bg-secondary: #161B22;
+            --bg-tertiary: #21262D;
+            --bg-elevated: #1C2128;
+            --text-primary: #F0F6FC;
+            --text-secondary: #8B949E;
+            --text-tertiary: #6E7681;
+            --text-disabled: #484F58;
+            --border-primary: #30363D;
+            --border-secondary: #21262D;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-2xl: 48px;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(0, 102, 255, 0.3);
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --transition-fast: 150ms ease;
+            --transition-normal: 250ms ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-primary);
+            border-radius: 4px;
+        }
+
+        /* 布局 */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-primary);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--hk-primary) 0%, var(--hk-primary-light) 100%);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: var(--space-md) 0;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .nav-section-title {
+            padding: var(--space-sm) var(--space-lg);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-tertiary);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: var(--space-sm) var(--space-lg);
+            margin: 2px var(--space-sm);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            gap: var(--space-md);
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--hk-primary-100);
+            color: var(--hk-primary);
+        }
+
+        .nav-item i {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .top-header {
+            height: 64px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--space-xl);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumb .active {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--hk-primary) 0%, var(--hk-primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .content-wrapper {
+            flex: 1;
+            padding: var(--space-xl);
+        }
+
+        .page-header {
+            margin-bottom: var(--space-xl);
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 设置页面布局 */
+        .settings-container {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: var(--space-xl);
+        }
+
+        /* 设置侧边栏 */
+        .settings-sidebar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            height: fit-content;
+            position: sticky;
+            top: 80px;
+        }
+
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-bottom: 2px;
+        }
+
+        .settings-nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .settings-nav-item.active {
+            background: var(--hk-primary-100);
+            color: var(--hk-primary);
+        }
+
+        .settings-nav-item i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* 设置内容区 */
+        .settings-content {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-lg);
+        }
+
+        .settings-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .settings-section-header {
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--border-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .settings-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .settings-section-body {
+            padding: var(--space-lg);
+        }
+
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .form-label .required {
+            color: var(--error);
+            margin-left: 2px;
+        }
+
+        .form-help {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: var(--space-xs);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: var(--space-sm) var(--space-md);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all var(--transition-fast);
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--hk-primary);
+            box-shadow: 0 0 0 3px var(--hk-primary-200);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+        }
+
+        /* 开关 */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--space-md) 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .switch-container:last-child {
+            border-bottom: none;
+        }
+
+        .switch-info {
+            flex: 1;
+        }
+
+        .switch-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .switch-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            margin-left: var(--space-md);
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 24px;
+            transition: all var(--transition-fast);
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: all var(--transition-fast);
+        }
+
+        .switch input:checked + .switch-slider {
+            background: var(--hk-primary);
+            border-color: var(--hk-primary);
+        }
+
+        .switch input:checked + .switch-slider:before {
+            transform: translateX(24px);
+            background: white;
+        }
+
+        /* 滑块 */
+        .slider-control {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-label-text {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .slider-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--hk-primary);
+            min-width: 50px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--hk-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 0 6px var(--hk-primary-200);
+        }
+
+        /* 按钮 */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--hk-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--hk-primary-light);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-elevated);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-lg {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+
+        /* 模型卡片 */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--space-md);
+        }
+
+        .model-card {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .model-card:hover {
+            border-color: var(--border-secondary);
+        }
+
+        .model-card.selected {
+            border-color: var(--hk-primary);
+            background: var(--hk-primary-50);
+        }
+
+        .model-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-sm);
+        }
+
+        .model-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .model-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--hk-primary-100);
+            color: var(--hk-primary);
+        }
+
+        .model-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 通知 */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: var(--space-xl);
+            padding: var(--space-md) var(--space-lg);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform var(--transition-normal);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-color: var(--success);
+        }
+
+        .notification.error {
+            border-color: var(--error);
+        }
+
+        .notification-icon {
+            font-size: 20px;
+        }
+
+        .notification.success .notification-icon {
+            color: var(--success);
+        }
+
+        .notification.error .notification-icon {
+            color: var(--error);
+        }
+
+        /* 响应式 */
+        @media (max-width: 992px) {
+            .settings-container {
+                grid-template-columns: 1fr;
+            }
+
+            .settings-sidebar {
+                position: static;
+                display: flex;
+                overflow-x: auto;
+                gap: var(--space-sm);
+            }
+
+            .settings-nav-item {
+                white-space: nowrap;
+                margin-bottom: 0;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="bi bi-eye-fill"></i>
+                </div>
+                <span class="logo-text">AI检测平台</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主菜单</div>
+                    <a href="dashboard.html" class="nav-item">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>控制台</span>
+                    </a>
+                    <a href="live_detection.html" class="nav-item">
+                        <i class="bi bi-camera-video-fill"></i>
+                        <span>实时检测</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-upload"></i>
+                        <span>批量检测</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        <span>数据分析</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">管理</div>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-folder-fill"></i>
+                        <span>任务管理</span>
+                    </a>
+                    <a href="settings.html" class="nav-item active">
+                        <i class="bi bi-gear-fill"></i>
+                        <span>系统设置</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="bi bi-journal-text"></i>
+                        <span>操作日志</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部导航栏 -->
+            <header class="top-header">
+                <div class="header-left">
+                    <nav class="breadcrumb">
+                        <a href="dashboard.html"><i class="bi bi-house-door"></i></a>
+                        <i class="bi bi-chevron-right" style="font-size: 12px;"></i>
+                        <span class="active">系统设置</span>
+                    </nav>
+                </div>
+
+                <div class="header-right">
+                    <div class="user-menu">
+                        <div class="user-avatar">A</div>
+                        <span class="user-name">管理员</span>
+                        <i class="bi bi-chevron-down" style="font-size: 12px; color: var(--text-tertiary);"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 内容区域 -->
+            <div class="content-wrapper">
+                <!-- 页面标题 -->
+                <div class="page-header">
+                    <h1 class="page-title">系统设置</h1>
+                    <p class="page-subtitle">配置检测参数、模型设置和系统选项</p>
+                </div>
+
+                <!-- 设置容器 -->
+                <div class="settings-container">
+                    <!-- 设置导航 -->
+                    <nav class="settings-sidebar">
+                        <a href="#general" class="settings-nav-item active" data-section="general">
+                            <i class="bi bi-sliders"></i>
+                            <span>常规设置</span>
+                        </a>
+                        <a href="#model" class="settings-nav-item" data-section="model">
+                            <i class="bi bi-cpu"></i>
+                            <span>模型配置</span>
+                        </a>
+                        <a href="#detection" class="settings-nav-item" data-section="detection">
+                            <i class="bi bi-eye"></i>
+                            <span>检测参数</span>
+                        </a>
+                        <a href="#camera" class="settings-nav-item" data-section="camera">
+                            <i class="bi bi-camera-video"></i>
+                            <span>摄像头设置</span>
+                        </a>
+                        <a href="#notification" class="settings-nav-item" data-section="notification">
+                            <i class="bi bi-bell"></i>
+                            <span>通知设置</span>
+                        </a>
+                        <a href="#system" class="settings-nav-item" data-section="system">
+                            <i class="bi bi-hdd"></i>
+                            <span>系统维护</span>
+                        </a>
+                    </nav>
+
+                    <!-- 设置内容 -->
+                    <div class="settings-content">
+                        <!-- 常规设置 -->
+                        <section class="settings-section" id="general">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-sliders" style="color: var(--info);"></i>
+                                    常规设置
+                                </div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">
+                                            系统名称
+                                            <span class="required">*</span>
+                                        </label>
+                                        <input type="text" class="form-input" value="YOLO智能检测平台" placeholder="输入系统名称">
+                                        <p class="form-help">显示在浏览器标签和页面标题中的系统名称</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">默认语言</label>
+                                        <select class="form-select">
+                                            <option value="zh-CN" selected>简体中文</option>
+                                            <option value="en">English</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">时区</label>
+                                        <select class="form-select">
+                                            <option value="Asia/Shanghai" selected>Asia/Shanghai (GMT+8)</option>
+                                            <option value="UTC">UTC</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">时间格式</label>
+                                        <select class="form-select">
+                                            <option value="24h" selected>24小时制</option>
+                                            <option value="12h">12小时制</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">自动保存设置</div>
+                                        <div class="switch-description">修改设置后自动保存，无需手动点击保存按钮</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">显示调试信息</div>
+                                        <div class="switch-description">在界面上显示额外的调试信息和性能指标</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 模型配置 -->
+                        <section class="settings-section" id="model">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-cpu" style="color: var(--success);"></i>
+                                    模型配置
+                                </div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="form-group">
+                                    <label class="form-label">选择默认模型</label>
+                                    <div class="model-grid">
+                                        <div class="model-card selected">
+                                            <div class="model-card-header">
+                                                <span class="model-name">YOLOv8n</span>
+                                                <span class="model-badge">推荐</span>
+                                            </div>
+                                            <div class="model-info">
+                                                轻量级模型<br>
+                                                速度: 极快 | 精度: 中等<br>
+                                                适合实时检测场景
+                                            </div>
+                                        </div>
+                                        <div class="model-card">
+                                            <div class="model-card-header">
+                                                <span class="model-name">YOLOv8s</span>
+                                            </div>
+                                            <div class="model-info">
+                                                小型模型<br>
+                                                速度: 快 | 精度: 良好<br>
+                                                平衡性能和精度
+                                            </div>
+                                        </div>
+                                        <div class="model-card">
+                                            <div class="model-card-header">
+                                                <span class="model-name">YOLOv8m</span>
+                                            </div>
+                                            <div class="model-info">
+                                                中型模型<br>
+                                                速度: 中等 | 精度: 高<br>
+                                                适合精度要求高的场景
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">自定义模型路径</label>
+                                        <input type="text" class="form-input" placeholder="/path/to/custom/model.pt">
+                                        <p class="form-help">留空使用默认模型</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">设备选择</label>
+                                        <select class="form-select">
+                                            <option value="auto" selected>自动检测</option>
+                                            <option value="cuda">CUDA (GPU)</option>
+                                            <option value="cpu">CPU</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 检测参数 -->
+                        <section class="settings-section" id="detection">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-eye" style="color: var(--hk-primary);"></i>
+                                    检测参数
+                                </div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <div class="slider-control">
+                                            <div class="slider-header">
+                                                <span class="slider-label-text">置信度阈值</span>
+                                                <span class="slider-value" id="confThresholdValue">0.50</span>
+                                            </div>
+                                            <input type="range" min="0" max="100" value="50" id="confThreshold">
+                                        </div>
+                                        <p class="form-help">检测结果的最低置信度要求，低于此值的结果将被过滤</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="slider-control">
+                                            <div class="slider-header">
+                                                <span class="slider-label-text">IoU阈值</span>
+                                                <span class="slider-value" id="iouThresholdValue">0.45</span>
+                                            </div>
+                                            <input type="range" min="0" max="100" value="45" id="iouThreshold">
+                                        </div>
+                                        <p class="form-help">非极大值抑制的IoU阈值，用于去除重叠的检测框</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">输入图像尺寸</label>
+                                        <select class="form-select">
+                                            <option value="640">640 × 640</option>
+                                            <option value="1280" selected>1280 × 1280</option>
+                                            <option value="1920">1920 × 1920</option>
+                                        </select>
+                                        <p class="form-help">较大的尺寸可以提高精度但会降低速度</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">最大检测数量</label>
+                                        <input type="number" class="form-input" value="300" min="1" max="1000">
+                                        <p class="form-help">单帧图像中最大检测对象数量</p>
+                                    </div>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">启用数据增强</div>
+                                        <div class="switch-description">对输入图像进行预处理以增强检测效果</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">半精度推理</div>
+                                        <div class="switch-description">使用FP16半精度进行推理，可提升速度但可能略微降低精度</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 摄像头设置 -->
+                        <section class="settings-section" id="camera">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-camera-video" style="color: var(--warning);"></i>
+                                    摄像头设置
+                                </div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">默认分辨率</label>
+                                        <select class="form-select">
+                                            <option value="480p">640 × 480 (480p)</option>
+                                            <option value="720p">1280 × 720 (720p)</option>
+                                            <option value="1080p" selected>1920 × 1080 (1080p)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">帧率 (FPS)</label>
+                                        <select class="form-select">
+                                            <option value="15">15 FPS</option>
+                                            <option value="30" selected>30 FPS</option>
+                                            <option value="60">60 FPS</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">缓冲区大小</label>
+                                        <input type="number" class="form-input" value="2" min="1" max="10">
+                                        <p class="form-help">视频流缓冲区帧数，较大的值可以提高流畅度但会增加延迟</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">重连间隔 (秒)</label>
+                                        <input type="number" class="form-input" value="5" min="1" max="60">
+                                        <p class="form-help">摄像头断开后自动重连的时间间隔</p>
+                                    </div>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">自动重连</div>
+                                        <div class="switch-description">摄像头断开后自动尝试重新连接</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">硬件加速</div>
+                                        <div class="switch-description">启用GPU硬件加速解码视频流</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 通知设置 -->
+                        <section class="settings-section" id="notification">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-bell" style="color: var(--error);"></i>
+                                    通知设置
+                                </div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">启用通知</div>
+                                        <div class="switch-description">接收系统通知和告警信息</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">检测完成通知</div>
+                                        <div class="switch-description">检测任务完成时发送通知</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">异常告警通知</div>
+                                        <div class="switch-description">检测到异常或错误时发送告警通知</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" checked>
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="switch-container">
+                                    <div class="switch-info">
+                                        <div class="switch-label">邮件通知</div>
+                                        <div class="switch-description">通过邮件接收重要通知</div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <div class="form-group" style="margin-top: var(--space-lg);">
+                                    <label class="form-label">通知邮箱</label>
+                                    <input type="email" class="form-input" placeholder="admin@example.com">
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 系统维护 -->
+                        <section class="settings-section" id="system">
+                            <div class="settings-section-header">
+                                <div class="settings-section-title">
+                                    <i class="bi bi-hdd" style="color: var(--text-secondary);"></i>
+                                    系统维护
+                                </div>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">日志保留天数</label>
+                                        <input type="number" class="form-input" value="30" min="1" max="365">
+                                        <p class="form-help">自动清理超过此天数的系统日志</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">数据备份频率</label>
+                                        <select class="form-select">
+                                            <option value="daily">每天</option>
+                                            <option value="weekly" selected>每周</option>
+                                            <option value="monthly">每月</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">备份存储路径</label>
+                                    <input type="text" class="form-input" value="/backup/yolo-detection" placeholder="输入备份路径">
+                                </div>
+
+                                <div style="display: flex; gap: var(--space-md); margin-top: var(--space-xl);">
+                                    <button class="btn btn-secondary" onclick="clearCache()">
+                                        <i class="bi bi-trash"></i>
+                                        清理缓存
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="exportConfig()">
+                                        <i class="bi bi-download"></i>
+                                        导出配置
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="importConfig()">
+                                        <i class="bi bi-upload"></i>
+                                        导入配置
+                                    </button>
+                                    <button class="btn btn-danger" onclick="resetSettings()">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                        恢复默认
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- 保存按钮 -->
+                        <div style="display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl);">
+                            <button class="btn btn-secondary btn-lg" onclick="cancelSettings()">取消</button>
+                            <button class="btn btn-primary btn-lg" onclick="saveSettings()">
+                                <i class="bi bi-check-lg"></i>
+                                保存设置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <i class="bi bi-check-circle-fill notification-icon"></i>
+        <span id="notificationText">设置已保存</span>
+    </div>
+
+    <script>
+        // 设置导航切换
+        document.querySelectorAll('.settings-nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 更新导航状态
+                document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 滚动到对应区域
+                const sectionId = this.getAttribute('data-section');
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // 模型卡片选择
+        document.querySelectorAll('.model-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // 滑块值更新
+        const confSlider = document.getElementById('confThreshold');
+        const confValue = document.getElementById('confThresholdValue');
+        const iouSlider = document.getElementById('iouThreshold');
+        const iouValue = document.getElementById('iouThresholdValue');
+
+        confSlider.addEventListener('input', (e) => {
+            confValue.textContent = (e.target.value / 100).toFixed(2);
+        });
+
+        iouSlider.addEventListener('input', (e) => {
+            iouValue.textContent = (e.target.value / 100).toFixed(2);
+        });
+
+        // 显示通知
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            const icon = notification.querySelector('.notification-icon');
+            
+            notificationText.textContent = message;
+            notification.className = 'notification show ' + type;
+            
+            if (type === 'success') {
+                icon.className = 'bi bi-check-circle-fill notification-icon';
+            } else {
+                icon.className = 'bi bi-x-circle-fill notification-icon';
+            }
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 保存设置
+        function saveSettings() {
+            // 模拟保存
+            showNotification('设置已成功保存', 'success');
+        }
+
+        // 取消设置
+        function cancelSettings() {
+            if (confirm('确定要取消修改吗？未保存的更改将丢失。')) {
+                window.location.reload();
+            }
+        }
+
+        // 清理缓存
+        function clearCache() {
+            if (confirm('确定要清理系统缓存吗？')) {
+                showNotification('缓存已清理', 'success');
+            }
+        }
+
+        // 导出配置
+        function exportConfig() {
+            showNotification('配置已导出', 'success');
+        }
+
+        // 导入配置
+        function importConfig() {
+            showNotification('请选择配置文件', 'error');
+        }
+
+        // 恢复默认
+        function resetSettings() {
+            if (confirm('确定要恢复默认设置吗？所有自定义配置将丢失。')) {
+                showNotification('已恢复默认设置', 'success');
+            }
+        }
+    </script>
+</body>
+</html>

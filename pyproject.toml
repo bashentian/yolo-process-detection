@@ -1,0 +1,146 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "yolo-process-detection"
+version = "1.0.0"
+description = "Industrial process monitoring system using YOLO for real-time detection and analysis"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "YOLO Process Detection Team"}
+]
+keywords = [
+    "yolo",
+    "computer-vision",
+    "object-detection",
+    "industrial-monitoring",
+    "process-analysis"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+
+dependencies = [
+    "ultralytics>=8.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "numpy>=1.24.0",
+    "opencv-python>=4.8.0",
+    "Pillow>=10.0.0",
+    "python-multipart>=0.0.6",
+    "Jinja2>=3.1.0",
+    "aiofiles>=23.0.0",
+    "httpx>=0.25.0",
+    "sqlalchemy>=2.0.0",
+    "typer>=0.9.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "email-validator>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "types-opencv-python>=4.8.0.0",
+    "types-Pillow>=10.0.0.0",
+    "types-Jinja2>=3.1.0.0",
+]
+
+[project.scripts]
+yolo-detection = "yolo_process_detection.main:cli"
+
+[project.urls]
+Homepage = "https://github.com/your-org/yolo-process-detection"
+Repository = "https://github.com/your-org/yolo-process-detection"
+Issues = "https://github.com/your-org/yolo-process-detection/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/yolo_process_detection"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "RUF",   # Ruff-specific
+]
+ignore = [
+    "E501",  # line too long (handled by ruff formatter)
+    "B008",  # do not perform function calls in argument defaults
+    "SIM115",  # use context handler for opening files
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "E402"]
+"tests/*" = ["E501", "B008"]
+
+[tool.mypy]
+strict = True
+warn_return_any = True
+warn_unused_ignores = True
+disallow_untyped_defs = True
+disallow_incomplete_defs = True
+check_untyped_defs = True
+no_implicit_optional = True
+strict_optional = True
+strict_equality = True
+
+[[tool.mypy.overrides]]
+module = [
+    "cv2",
+    "numpy.*",
+    "ultralytics.*",
+]
+ignore_errors = True
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+
+[tool.coverage.run]
+branch = True
+source = ["yolo_process_detection"]
+omit = [
+    "tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

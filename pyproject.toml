@@ -99,15 +99,15 @@ ignore = [
 "tests/*" = ["E501", "B008"]
 
 [tool.mypy]
-strict = True
-warn_return_any = True
-warn_unused_ignores = True
-disallow_untyped_defs = True
-disallow_incomplete_defs = True
-check_untyped_defs = True
-no_implicit_optional = True
-strict_optional = True
-strict_equality = True
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
@@ -115,7 +115,7 @@ module = [
     "numpy.*",
     "ultralytics.*",
 ]
-ignore_errors = True
+ignore_errors = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -130,7 +130,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-branch = True
+branch = true
 source = ["yolo_process_detection"]
 omit = [
     "tests/*",

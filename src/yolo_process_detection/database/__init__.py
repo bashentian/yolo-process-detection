@@ -9,6 +9,18 @@ from .models import (
     User,
     Settings
 )
+from .extended_models import (
+    ActionSegment,
+    ActionSequence,
+    ScrewDetection,
+    MaterialPick,
+    PostureEvent,
+    FatigueRecord,
+    SensorReading,
+    WorkflowStep,
+    WorkflowExecution,
+    TrainingData
+)
 from .manager import (
     DatabaseManager,
     get_db_manager,
@@ -23,6 +35,14 @@ from .repositories import (
     UserRepository,
     SettingsRepository
 )
+from .extended_repositories import (
+    ActionSegmentRepository,
+    ScrewDetectionRepository,
+    MaterialPickRepository,
+    PostureEventRepository,
+    FatigueRecordRepository,
+    SensorReadingRepository
+)
 
 __all__ = [
     "Base",
@@ -33,6 +53,16 @@ __all__ = [
     "Alert",
     "User",
     "Settings",
+    "ActionSegment",
+    "ActionSequence",
+    "ScrewDetection",
+    "MaterialPick",
+    "PostureEvent",
+    "FatigueRecord",
+    "SensorReading",
+    "WorkflowStep",
+    "WorkflowExecution",
+    "TrainingData",
     "DatabaseManager",
     "get_db_manager",
     "get_db",
@@ -42,5 +72,11 @@ __all__ = [
     "DetectionRepository",
     "AlertRepository",
     "UserRepository",
-    "SettingsRepository"
+    "SettingsRepository",
+    "ActionSegmentRepository",
+    "ScrewDetectionRepository",
+    "MaterialPickRepository",
+    "PostureEventRepository",
+    "FatigueRecordRepository",
+    "SensorReadingRepository"
 ]

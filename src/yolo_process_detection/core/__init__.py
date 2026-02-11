@@ -28,6 +28,23 @@ from .performance import (
     RateLimiter,
     rate_limit
 )
+from .utils import (
+    setup_logging,
+    log_execution_time,
+    handle_exceptions,
+    validate_image_path,
+    validate_video_path,
+    safe_divide,
+    ProgressTracker
+)
+from .optimization import (
+    MemoryManager,
+    BatchProcessor,
+    ImageCache,
+    ParallelProcessor,
+    PerformanceMonitor as SystemPerformanceMonitor,
+    get_optimal_batch_size
+)
 from .errors import (
     BaseError,
     ValidationError as APIValidationError,
@@ -70,6 +87,19 @@ __all__ = [
     "performance_context",
     "RateLimiter",
     "rate_limit",
+    "setup_logging",
+    "log_execution_time",
+    "handle_exceptions",
+    "validate_image_path",
+    "validate_video_path",
+    "safe_divide",
+    "ProgressTracker",
+    "MemoryManager",
+    "BatchProcessor",
+    "ImageCache",
+    "ParallelProcessor",
+    "SystemPerformanceMonitor",
+    "get_optimal_batch_size",
     "BaseError",
     "NotFoundError",
     "ConflictError",
